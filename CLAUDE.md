@@ -45,6 +45,12 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
 - Kommunikation und Erklärungen auf Deutsch.
 - Infrastruktur-Konfig (docker-compose.yml etc.) wird mit ins Repo versioniert.
 - Frontend in JavaScript (JSX), kein TypeScript.
+- Home-Assistant-Live-Zustände kommen über die WebSocket-Subscription
+    (home-assistant-js-websocket, subscribeEntities) in einem React-Context –
+    nicht über TanStack Query.
+- TanStack Query ist für REST-artige Aufrufe ans eigene Backend reserviert.
+- HA-Token liegt aktuell im Frontend (.env.local, nie committen);
+  später serverseitig über das eigene Backend proxyen.
 
 ## Betriebshinweise (nicht anfassen)
 - Kernel-Parameter `nvme_core.default_ps_max_latency_us=0` in /boot/firmware/cmdline.txt

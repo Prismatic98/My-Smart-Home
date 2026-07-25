@@ -7,7 +7,7 @@ import { IconBulb, IconFolders, IconNotes } from '@tabler/icons-react';
 export const modules = [
   {
     key: 'notes',
-    path: '/notizen',
+    path: '/notes',
     label: 'Notizen',
     description: 'Notizen anlegen und bearbeiten – lokal im Browser gespeichert, offline nutzbar.',
     icon: IconNotes,
@@ -16,7 +16,7 @@ export const modules = [
   },
   {
     key: 'files',
-    path: '/dateien',
+    path: '/files',
     label: 'Datenablage',
     description: 'Dateien von überall hochladen, gespeichert auf der SSD des Raspberry Pi.',
     icon: IconFolders,
@@ -25,11 +25,11 @@ export const modules = [
   },
   {
     key: 'smarthome',
-    path: '/smarthome',
+    path: '/smart-home',
     label: 'Smart Home',
-    description: 'Geräte und Automationen über Home Assistant steuern und überwachen.',
+    description: 'Lichter live über Home Assistant steuern – an/aus, Helligkeit, Farbe.',
     icon: IconBulb,
     color: 'blue',
-    status: 'geplant',
+    status: 'live',
   },
 ];

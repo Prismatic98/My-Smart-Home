@@ -8,6 +8,7 @@ import '@mantine/core/styles.css';
 import './styles/global.scss';
 
 import App from './App.jsx';
+import { HAProvider } from './lib/HAProvider.jsx';
 import { theme } from './lib/theme.js';
 import { queryClient } from './lib/queryClient.js';
 
@@ -22,9 +23,11 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="dark">
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <HAProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </HAProvider>
         <Suspense fallback={null}>
           <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
         </Suspense>

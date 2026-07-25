@@ -11,9 +11,9 @@ export default function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
-        <Route path="notizen" element={<NotesPage />} />
-        <Route path="dateien" element={<FilesPage />} />
-        <Route path="smarthome" element={<SmartHomePage />} />
+        <Route path="notes" element={<NotesPage />} />
+        <Route path="files" element={<FilesPage />} />
+        <Route path="smart-home" element={<SmartHomePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

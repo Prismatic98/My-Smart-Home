@@ -13,6 +13,24 @@ npm run build    # Produktions-Build nach dist/ inkl. Service Worker + Manifest
 npm run preview  # Produktions-Build lokal testen (PWA/Offline nur hier realistisch)
 ```
 
+## Home Assistant konfigurieren
+
+`.env.example` nach `.env.local` kopieren und ausfüllen (die Datei ist gitignored):
+
+```
+VITE_HA_URL=http://smarthome:8123
+VITE_HA_TOKEN=<Long-Lived Access Token aus HA → Profil → Sicherheit>
+```
+
+Vite liest env-Dateien nur beim Start — nach Änderungen den Dev-Server neu starten.
+
+Zwei Dinge zu beachten:
+
+- `VITE_*`-Variablen landen im Client-Bundle. Wer die App aufrufen kann, hat damit
+  auch den HA-Token. Vertretbar, solange die App nur privat über Tailscale erreichbar ist.
+- Läuft die App über HTTPS (`tailscale serve`), darf Home Assistant nicht als `http://`
+  eingebunden sein — der Browser blockiert die Mischung (Mixed Content).
+
 ## Struktur
 
 ```
@@ -20,7 +38,8 @@ public/                 statische Assets (PWA-Icons, favicon)
 src/
   components/           wiederverwendbare UI-Bausteine (je Ordner: .jsx + .module.scss)
   features/             fachliche Module: home, notes, files, smarthome
-  lib/                  Querschnitt: theme.js, queryClient.js, modules.js
+  lib/                  Querschnitt: theme.js, queryClient.js, modules.js,
+                        homeassistant.js + HAProvider.jsx (HA-Verbindung)
   styles/               globale Styles + _mantine.scss (Sass-Breakpoints & Helfer)
   App.jsx               Routing
   main.jsx              Provider-Setup (Mantine, TanStack Query, Router)
@@ -31,7 +50,9 @@ src/
 - **React 19 + Vite** (JavaScript/JSX, kein TypeScript)
 - **Mantine** als UI-Framework, Dark Mode als Standard
 - **SCSS-Module** (`*.module.scss`) für eigene Styles
-- **TanStack Query** für Datenabruf
+- **Dexie** (IndexedDB) für die lokalen Notizen
+- **home-assistant-js-websocket** für Live-Zustände und Service-Aufrufe
+- **TanStack Query** reserviert für die spätere Backend-Anbindung
 - **React Router** für Navigation
 - **vite-plugin-pwa** für Service Worker, Manifest und Offline-Fähigkeit
 
