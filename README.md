@@ -90,6 +90,16 @@ wird die Variable gesetzt.
 erreicht — der HA-Container läuft selbst im Host-Netz. Deshalb gibt es auch kein
 `ports:`-Mapping; Caddy belegt Port 8080 des Pi direkt.
 
+### Wenn statt der App „Unable to connect to Home Assistant" erscheint
+
+Diese Meldung kommt aus HAs eigenem Frontend, nicht aus dieser App (die meldet
+deutsch). Zeigte `tailscale serve` vorher auf Port 8123, hat Home Assistant unter
+derselben Origin seinen Service Worker registriert — der beantwortet Aufrufe
+weiter aus seinem Cache und fragt den Server gar nicht mehr. Prüfen mit
+`curl -s http://localhost:8080/ | head -c 400` (muss `<title>Smart Home</title>`
+enthalten); liegt es am Browser, hilft *Clear site data* inkl. „unregister
+service workers" bzw. ein privates Fenster als Gegentest.
+
 ## Struktur
 
 ```
