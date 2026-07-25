@@ -29,7 +29,56 @@ Zwei Dinge zu beachten:
 - `VITE_*`-Variablen landen im Client-Bundle. Wer die App aufrufen kann, hat damit
   auch den HA-Token. Vertretbar, solange die App nur privat über Tailscale erreichbar ist.
 - Läuft die App über HTTPS (`tailscale serve`), darf Home Assistant nicht als `http://`
-  eingebunden sein — der Browser blockiert die Mischung (Mixed Content).
+  eingebunden sein — der Browser blockiert die Mischung (Mixed Content). In Produktion
+  löst der Reverse-Proxy das (siehe unten), im Dev-Server ist HTTP ohne HTTPS unkritisch.
+
+## Deployment auf dem Pi
+
+Ein Container, zwei Aufgaben: Caddy liefert die gebaute PWA aus **und** reicht
+Home Assistant unter `/api/*` durch. App und HA teilen sich damit eine Origin —
+kein CORS, kein Mixed Content, und der WebSocket läuft als `wss://` über
+`/api/websocket`. TLS macht Tailscale davor, Caddy selbst spricht nur HTTP auf 8080.
+
+```
+Browser ──https──▶ tailscale serve ──http:8080──▶ Caddy ──┬─▶ /srv (dist/)
+                                                          └─▶ 127.0.0.1:8123 (Home Assistant)
+```
+
+Beteiligte Dateien: [`Dockerfile`](./Dockerfile) (Build- und Serve-Stage),
+[`Caddyfile`](./Caddyfile), [`docker-compose.prod.yml`](./docker-compose.prod.yml),
+[`.env.prod.example`](./.env.prod.example).
+
+Einmalig auf dem Pi:
+
+```bash
+git clone <repo> ~/docker/my-smart-home && cd ~/docker/my-smart-home
+cp .env.prod.example .env.prod
+nano .env.prod        # VITE_HA_TOKEN eintragen, VITE_HA_URL leer lassen
+```
+
+Bauen und starten (auch für jedes Update — `--build` ist Pflicht, weil der
+HA-Token zur Build-Zeit ins Bundle wandert):
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+docker compose -f docker-compose.prod.yml logs -f app
+```
+
+Nach außen freigeben:
+
+```bash
+sudo tailscale serve --bg 8080     # HTTPS auf 443 → localhost:8080
+tailscale serve status
+```
+
+`VITE_HA_URL` bleibt leer: die App nimmt dann zur Laufzeit die eigene Origin,
+funktioniert also unter dem Tailscale-Namen genauso wie unter `http://smarthome:8080`.
+Nur wenn Home Assistant ausnahmsweise direkt (ohne Proxy) angesprochen werden soll,
+wird die Variable gesetzt.
+
+`network_mode: host` ist nötig, damit Caddy Home Assistant unter `127.0.0.1:8123`
+erreicht — der HA-Container läuft selbst im Host-Netz. Deshalb gibt es auch kein
+`ports:`-Mapping; Caddy belegt Port 8080 des Pi direkt.
 
 ## Struktur
 

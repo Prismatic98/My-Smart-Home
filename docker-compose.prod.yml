@@ -1,0 +1,32 @@
+# Produktions-Stack der App auf dem Raspberry Pi.
+#
+#   cp .env.prod.example .env.prod        # einmalig, Token eintragen
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Home Assistant läuft als eigener Container (~/docker/docker-compose.yml)
+# und wird hier nur über den Reverse-Proxy angesprochen.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Aus .env.prod (nicht im Repo). Vite backt die Werte in das Bundle –
+        # nach einer Änderung an .env.prod muss neu gebaut werden.
+        # Leer = App spricht Home Assistant über die eigene Origin an.
+        VITE_HA_URL: ${VITE_HA_URL:-}
+        VITE_HA_TOKEN: ${VITE_HA_TOKEN:?VITE_HA_TOKEN fehlt – .env.prod anlegen (siehe .env.prod.example)}
+    image: my-smart-home:latest
+    container_name: my-smart-home
+    restart: unless-stopped
+    # Damit Caddy Home Assistant unter 127.0.0.1:8123 erreicht: der
+    # HA-Container läuft selbst mit network_mode: host, beide teilen sich
+    # also das Loopback des Pi. Kein ports:-Mapping nötig – Caddy lauscht
+    # direkt auf Port 8080 des Hosts.
+    network_mode: host
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

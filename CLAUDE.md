@@ -34,6 +34,12 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
 - Fernzugriff + HTTPS über Tailscale (tailscale serve).
   SSH über Tailscale SSH. MagicDNS-Name des Pi: `smarthome`, User: `dennis`.
 - App und Backend kommen als weitere Container in dieselbe docker-compose.yml.
+- Die App läuft als eigener Container (Dockerfile + docker-compose.prod.yml im Repo):
+  Caddy liefert das gebaute `dist` auf Port 8080 aus und reicht `/api/*` per
+  reverse_proxy an Home Assistant (127.0.0.1:8123) weiter — deshalb
+  `network_mode: host`. Same-origin: kein CORS, kein Mixed Content.
+- Prod-Konfiguration in `.env.prod` (gitignored, Vorlage `.env.prod.example`);
+  die Werte gehen als Build-Args in den Vite-Build.
 
 ## Stand der Geräte-Integration
 - Govee-Lampen: über "Govee Lights Local" (lokal) eingebunden, benannt, steuerbar.

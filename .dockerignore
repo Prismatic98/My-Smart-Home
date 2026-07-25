@@ -1,0 +1,27 @@
+# Hält den Build-Context klein und verhindert vor allem, dass lokale
+# Env-Dateien (mit dem Dev-Token) in den Image-Build wandern.
+# Die Konfiguration kommt ausschließlich über die Build-Args.
+
+node_modules
+dist
+dist-ssr
+dev-dist
+
+.env
+.env.local
+.env.*.local
+.env.prod
+
+.git
+.gitignore
+.idea
+.vscode
+
+*.log
+npm-debug.log*
+
+Dockerfile
+.dockerignore
+docker-compose*.yml
+README.md
+CLAUDE.md

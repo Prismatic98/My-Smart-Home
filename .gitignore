@@ -20,3 +20,6 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+# Produktions-Konfiguration für den Pi (enthält den HA-Token).
+# Vorlage: .env.prod.example
+.env.prod

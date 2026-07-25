@@ -1,0 +1,51 @@
+# Caddy macht hier zwei Dinge gleichzeitig:
+#   1. die gebaute PWA aus /srv ausliefern (mit SPA-Fallback)
+#   2. Home Assistant unter /api/* durchreichen
+#
+# Dadurch laufen App und Home Assistant über dieselbe Origin:
+# kein CORS, und hinter dem HTTPS von Tailscale auch kein Mixed Content.
+#
+# TLS/Zertifikate übernimmt Tailscale (`tailscale serve`), deshalb lauscht
+# Caddy nur auf http:8080.
+
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	log
+
+	encode zstd gzip
+
+	root * /srv
+
+	# Gehashte Build-Assets (index-a1b2c3.js …) ändern bei jeder Änderung
+	# ihren Namen und dürfen darum beliebig lange im Browser liegen.
+	@immutable path /assets/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	# App-Shell und Service Worker müssen dagegen immer revalidiert werden,
+	# sonst bekommt eine installierte PWA nie ein Update zu sehen.
+	@revalidate path / /index.html /sw.js /registerSW.js /manifest.webmanifest
+	header @revalidate Cache-Control "no-cache"
+
+	# --- Home Assistant ----------------------------------------------------
+	# Der Container läuft mit network_mode: host, Home Assistant hört auf
+	# 127.0.0.1:8123. Das deckt REST (/api/states, /api/services/…) und den
+	# WebSocket unter /api/websocket ab: reverse_proxy erkennt den
+	# Upgrade-Header und reicht die Verbindung transparent und ohne Timeout
+	# durch, es braucht also keine Sonderbehandlung für den Socket.
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8123
+	}
+
+	# --- PWA ---------------------------------------------------------------
+	handle {
+		# SPA-Fallback: existiert der Pfad nicht als Datei, wird index.html
+		# ausgeliefert. Damit funktionieren Deeplinks wie /notizen auch beim
+		# harten Neuladen – die Route löst dann der React-Router auf.
+		try_files {path} /index.html
+		file_server
+	}
+}

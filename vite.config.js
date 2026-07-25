@@ -32,6 +32,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // SPA: unbekannte Routen aus dem Cache mit index.html beantworten
         navigateFallback: 'index.html',
+        // …aber nicht /api/*: dahinter liegt in Produktion Home Assistant
+        // (Reverse-Proxy). Diese Requests müssen immer ans Netz gehen.
+        navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,
       },
       devOptions: {
