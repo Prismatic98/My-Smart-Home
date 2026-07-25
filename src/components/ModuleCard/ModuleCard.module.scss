@@ -1,0 +1,17 @@
+.card {
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease;
+
+  &:hover {
+    transform: translateY(px-to-rem(-2px));
+    border-color: var(--mantine-primary-color-filled);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}

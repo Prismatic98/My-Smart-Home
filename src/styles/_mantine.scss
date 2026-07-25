@@ -1,0 +1,18 @@
+// Wird über vite.config.js automatisch in jede .scss-Datei eingebunden.
+// Enthält das Sass-Pendant zu dem, was Mantine in reinen CSS-Projekten
+// über postcss-simple-vars / postcss-preset-mantine bereitstellt.
+@use 'sass:math';
+
+// Breakpoints – identisch zu Mantines Defaults
+$mantine-breakpoint-xs: 36em;
+$mantine-breakpoint-sm: 48em;
+$mantine-breakpoint-md: 62em;
+$mantine-breakpoint-lg: 75em;
+$mantine-breakpoint-xl: 88em;
+
+/// px -> rem (Mantine rechnet mit 16px Basis).
+/// Heißt bewusst nicht `rem()`, da Sass dafür bereits eine eingebaute
+/// Modulo-Funktion mitbringt.
+@function px-to-rem($value) {
+  @return math.div($value, 16px) * 1rem;
+}

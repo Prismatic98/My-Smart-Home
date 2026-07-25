@@ -1,0 +1,20 @@
+// Globale Basis-Styles. Alles Komponenten-spezifische gehört
+// in eine eigene *.module.scss neben die Komponente.
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  // Safe-Area-Insets für den installierten PWA-Vollbildmodus
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
