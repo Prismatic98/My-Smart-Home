@@ -2,8 +2,13 @@
 # N-API-Binary im npm-Paket mit. Deshalb --ignore-scripts – sonst würde npm
 # wegen der binding.gyp einen Quellbau starten und Python + g++ verlangen
 # (siehe .npmrc).
+#
+# Trixie (Debian 13, glibc 2.41) statt Bookworm (Debian 12, glibc 2.36):
+# das Prebuild von better-sqlite3 13 ist gegen GLIBC_2.38 gelinkt und lässt
+# sich unter Bookworm nicht laden ("version `GLIBC_2.38' not found").
+# Basis-Image also nicht einfach zurückstufen.
 
-FROM node:22-bookworm-slim
+FROM node:22-trixie-slim
 
 ENV NODE_ENV=production
 
@@ -22,6 +27,11 @@ WORKDIR /app
 # Erst die Manifeste: solange die sich nicht ändern, kommt npm ci aus dem Cache.
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
+
+# Das native Binary sofort laden. Passt es nicht zum Basis-Image, scheitert
+# schon der Build mit klarer Meldung – sonst merkt man es erst daran, dass der
+# Container in einer Restart-Schleife hängt.
+RUN node -e "new (require('better-sqlite3'))(':memory:').close()"
 
 COPY src ./src
 

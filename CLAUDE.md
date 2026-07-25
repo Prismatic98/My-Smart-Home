@@ -75,6 +75,9 @@ Nächster Schritt: Datei-Upload auf die SSD (Modul „Datenablage").
   (WAL legt -wal/-shm daneben, deshalb Verzeichnis statt Datei mounten).
 - `.npmrc` setzt `ignore-scripts=true`: better-sqlite3 bringt N-API-Prebuilds mit,
   npm würde wegen der binding.gyp sonst unnötig aus dem Quellcode bauen.
+- Basis-Image des Servers ist `node:22-trixie-slim`. Das Prebuild verlangt
+  GLIBC 2.38; Bookworm hat nur 2.36 und der Container landet in einer
+  Restart-Schleife. Ein Smoke-Test im Dockerfile fängt das beim Build ab.
 - Erreichbar nur über den Reverse-Proxy (`HOST=127.0.0.1`), daher ohne Auth.
 
 ## Notizen-Sync
