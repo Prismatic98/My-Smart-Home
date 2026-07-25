@@ -29,6 +29,35 @@ services:
     # also das Loopback des Pi. Kein ports:-Mapping nötig – Caddy lauscht
     # direkt auf Port 8080 des Hosts.
     network_mode: host
+    depends_on:
+      - backend
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: my-smart-home-backend:latest
+    container_name: my-smart-home-backend
+    restart: unless-stopped
+    # Ebenfalls Host-Netz, damit Caddy den Server unter 127.0.0.1:3001 findet.
+    network_mode: host
+    environment:
+      DB_PATH: /data/notes.db
+      PORT: "3001"
+      # NUR auf dem Loopback lauschen. Im Host-Netz wäre 0.0.0.0 sonst offen
+      # im LAN – erreichbar sein soll der Server ausschließlich über Caddy.
+      HOST: 127.0.0.1
+    volumes:
+      # Verzeichnis, nicht die einzelne Datei: SQLite legt im WAL-Modus
+      # notes.db-wal und notes.db-shm daneben.
+      # Muss vor dem ersten Start existieren und uid 1000 gehören, sonst legt
+      # Docker es als root an und der Container darf nicht hineinschreiben.
+      - ${BACKEND_DATA_DIR:-./data}:/data
     logging:
       driver: json-file
       options:

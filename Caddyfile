@@ -40,6 +40,19 @@
 		reverse_proxy 127.0.0.1:8123
 	}
 
+	# --- Eigenes Backend ---------------------------------------------------
+	# Notizen-Sync (Fastify, ebenfalls network_mode: host). Das Präfix wird
+	# abgeschnitten, /backend/notes/sync landet also als /notes/sync.
+	#
+	# Bewusst `handle` + `uri strip_prefix` statt `handle_path`: Caddy sortiert
+	# Direktiven nach fester Reihenfolge, und `handle` läuft vor `handle_path`.
+	# Der Catch-all-`handle`-Block unten würde /backend/* damit abfangen, bevor
+	# ein handle_path zum Zug käme. Gleiche Direktive = Reihenfolge wie notiert.
+	handle /backend/* {
+		uri strip_prefix /backend
+		reverse_proxy 127.0.0.1:3001
+	}
+
 	# --- PWA ---------------------------------------------------------------
 	handle {
 		# SPA-Fallback: existiert der Pfad nicht als Datei, wird index.html

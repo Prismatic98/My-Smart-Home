@@ -7,10 +7,17 @@ import DeleteNoteModal from './components/DeleteNoteModal.jsx';
 import NoteCard from './components/NoteCard.jsx';
 import NoteEditorModal from './components/NoteEditorModal.jsx';
 import NotesEmptyState from './components/NotesEmptyState.jsx';
+import SyncStatus from './components/SyncStatus.jsx';
 import { createNote, deleteNote, updateNote, useNotes } from './useNotes.js';
+import { useNotesSync } from './useNotesSync.js';
 
 export default function NotesPage() {
   const { notes, isLoading } = useNotes();
+
+  // Derselbe Query-Key wie im NotesSyncWorker (main.jsx) – TanStack Query
+  // teilt sich die Instanz. Hier wird also nur der Zustand mitgelesen, es
+  // läuft kein zweiter Sync.
+  const sync = useNotesSync();
 
   // `note: null` = neue Notiz. Beim Schließen bleibt `note` stehen, damit das
   // Modal sauber ausblenden kann, ohne dass der Inhalt vorher wegspringt.
@@ -54,12 +61,20 @@ export default function NotesPage() {
       <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
         <PageHeader
           title="Notizen"
-          badge="lokal"
-          description="Gespeichert im Browser (IndexedDB) – offline verfügbar. Die Synchronisation mit dem Backend folgt später."
+          badge="offline-fähig"
+          description="Gespeichert im Browser (IndexedDB) und im Hintergrund mit dem Pi abgeglichen. Bearbeiten geht auch ohne Netz."
         />
-        <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
-          Neue Notiz
-        </Button>
+        <Group gap="md" wrap="nowrap">
+          <SyncStatus
+            status={sync.status}
+            lastSyncedAt={sync.lastSyncedAt}
+            error={sync.error}
+            onRetry={sync.sync}
+          />
+          <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
+            Neue Notiz
+          </Button>
+        </Group>
       </Group>
 
       {error && (

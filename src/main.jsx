@@ -8,6 +8,7 @@ import '@mantine/core/styles.css';
 import './styles/global.scss';
 
 import App from './App.jsx';
+import NotesSyncWorker from './features/notes/NotesSyncWorker.jsx';
 import { HAProvider } from './lib/HAProvider.jsx';
 import { theme } from './lib/theme.js';
 import { queryClient } from './lib/queryClient.js';
@@ -23,6 +24,8 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="dark">
       <QueryClientProvider client={queryClient}>
+        {/* Hintergrundprozess ohne eigene Darstellung – siehe NotesSyncWorker. */}
+        <NotesSyncWorker />
         <HAProvider>
           <BrowserRouter>
             <App />

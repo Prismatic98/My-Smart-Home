@@ -7,6 +7,10 @@ dist
 dist-ssr
 dev-dist
 
+# Das Backend hat ein eigenes Image mit eigenem Build-Context (./server).
+server
+data
+
 .env
 .env.local
 .env.*.local

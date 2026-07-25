@@ -65,7 +65,29 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
 
 ## Aktueller Stand
 Infrastruktur steht (Pi, Docker, Home Assistant, Tailscale, Govee-Lampen).
-Nächster Schritt: Grundgerüst der PWA (Vite + PWA-Plugin) und erstes Backend-Modul (Notizen).
+PWA-Grundgerüst, Notizen (Dexie) und Smart-Home-Anbindung laufen.
+Backend (Fastify + SQLite) mit Notizen-Sync steht, Deployment über Caddy.
+Nächster Schritt: Datei-Upload auf die SSD (Modul „Datenablage").
+
+## Backend
+- Liegt in `server/` mit eigener package.json (Node + Fastify + better-sqlite3).
+- `DB_PATH` bestimmt die SQLite-Datei; auf dem Pi ein gemountetes Verzeichnis
+  (WAL legt -wal/-shm daneben, deshalb Verzeichnis statt Datei mounten).
+- `.npmrc` setzt `ignore-scripts=true`: better-sqlite3 bringt N-API-Prebuilds mit,
+  npm würde wegen der binding.gyp sonst unnötig aus dem Quellcode bauen.
+- Erreichbar nur über den Reverse-Proxy (`HOST=127.0.0.1`), daher ohne Auth.
+
+## Notizen-Sync
+- Local-first bleibt: die UI schreibt und liest ausschließlich Dexie.
+  Der Abgleich ist ein Hintergrundprozess und darf nie blockieren.
+- Ein Round-Trip: POST /notes/sync schickt `since` + alle `dirty`-Notizen,
+  bekommt die serverseitig neueren zurück. Konflikte per last-write-wins
+  über `updatedAt`.
+- Löschen = `deletedAt` setzen (Tombstone), niemals die Zeile entfernen.
+- Zwei Uhren strikt trennen: `updatedAt` kommt vom Client und entscheidet
+  Konflikte, `since`/`serverUpdatedAt` sind Server-Zeit.
+- Eine lokale Änderung bekommt immer einen Zeitstempel größer als der bisherige
+  Stand der Notiz (nicht blind Date.now()).
 
 ## Feature-Aufbau
 - Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`

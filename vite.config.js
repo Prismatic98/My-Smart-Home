@@ -32,9 +32,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // SPA: unbekannte Routen aus dem Cache mit index.html beantworten
         navigateFallback: 'index.html',
-        // …aber nicht /api/*: dahinter liegt in Produktion Home Assistant
-        // (Reverse-Proxy). Diese Requests müssen immer ans Netz gehen.
-        navigateFallbackDenylist: [/^\/api\//],
+        // …aber nicht /api/* und /backend/*: dahinter liegen in Produktion
+        // Home Assistant bzw. das eigene Backend (Reverse-Proxy). Diese
+        // Requests müssen immer ans Netz gehen.
+        navigateFallbackDenylist: [/^\/api\//, /^\/backend\//],
         cleanupOutdatedCaches: true,
       },
       devOptions: {
@@ -63,5 +64,16 @@ export default defineConfig({
     // Damit der Dev-Server auch aus dem Tailscale-Netz erreichbar ist
     host: true,
     port: 5173,
+    proxy: {
+      // Bildet im Dev nach, was in Produktion Caddy macht: /backend zeigt auf
+      // den lokalen Fastify-Server, das Präfix wird abgeschnitten. Dadurch
+      // ist das Backend in beiden Umgebungen unter derselben Origin
+      // erreichbar und der Client braucht keine Fallunterscheidung.
+      '/backend': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/backend/, ''),
+      },
+    },
   },
 });

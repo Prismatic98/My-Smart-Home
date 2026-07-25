@@ -3,6 +3,10 @@ dist/
 dist-ssr/
 dev-dist/
 
+# SQLite-Daten des Backends (lokal wie auf dem Pi)
+data/
+server/data/
+
 # Logs
 *.log
 npm-debug.log*

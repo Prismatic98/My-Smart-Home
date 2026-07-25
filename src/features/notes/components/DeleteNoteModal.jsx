@@ -21,7 +21,8 @@ export default function DeleteNoteModal({ opened, note, onClose, onConfirm }) {
     <Modal opened={opened} onClose={onClose} title="Notiz löschen" radius="md" centered size="sm">
       <Stack gap="lg">
         <Text size="sm">
-          Soll {label} wirklich gelöscht werden? Das lässt sich nicht rückgängig machen.
+          Soll {label} wirklich gelöscht werden? Sie verschwindet beim nächsten Abgleich auch
+          auf den anderen Geräten und lässt sich nicht zurückholen.
         </Text>
         <Group justify="flex-end" gap="sm">
           <Button variant="default" onClick={onClose} disabled={deleting}>

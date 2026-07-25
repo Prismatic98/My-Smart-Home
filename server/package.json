@@ -1,0 +1,18 @@
+{
+  "name": "my-smart-home-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Backend der Smart-Home-PWA: Notizen-Sync auf SQLite",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.1",
+    "fastify": "^5.10.0"
+  }
+}
