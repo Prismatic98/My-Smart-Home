@@ -54,3 +54,16 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
 ## Aktueller Stand
 Infrastruktur steht (Pi, Docker, Home Assistant, Tailscale, Govee-Lampen).
 Nächster Schritt: Grundgerüst der PWA (Vite + PWA-Plugin) und erstes Backend-Modul (Notizen).
+
+## Feature-Aufbau
+- Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`
+  mit Datenzugriff (z. B. db.js + Hooks) und den zugehörigen UI-Komponenten.
+- Geteiltes: `src/components` (gemeinsame Komponenten), `src/lib` (Helfer).
+- Jedes Feature bindet seine eigene Route ein und ergänzt die Navigation.
+
+## Daten & State
+- Local-first: rein lokale Daten liegen in IndexedDB via Dexie.
+  Reaktive Listen mit `useLiveQuery` (dexie-react-hooks).
+- TanStack Query ist ausschließlich für Server-/Home-Assistant-Daten
+  reserviert – NICHT für lokale IndexedDB-Daten.
+- Datensätze haben konsistente Zeitfelder: `id`, `createdAt`, `updatedAt`.

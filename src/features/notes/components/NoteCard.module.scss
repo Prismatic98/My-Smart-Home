@@ -1,0 +1,24 @@
+.card {
+  height: 100%;
+  transition: border-color 150ms ease;
+
+  &:hover {
+    border-color: var(--mantine-primary-color-filled);
+  }
+}
+
+.body {
+  flex: 1;
+  min-width: 0; // damit lineClamp im Flex-Container greift
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: px-to-rem(2px) solid var(--mantine-primary-color-filled);
+    outline-offset: px-to-rem(4px);
+    border-radius: var(--mantine-radius-sm);
+  }
+}
+
+.preview {
+  white-space: pre-wrap;
+}

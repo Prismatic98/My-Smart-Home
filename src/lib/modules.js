@@ -9,10 +9,10 @@ export const modules = [
     key: 'notes',
     path: '/notizen',
     label: 'Notizen',
-    description: 'Notizen anlegen und bearbeiten – offline-fähig, Sync mit dem Backend.',
+    description: 'Notizen anlegen und bearbeiten – lokal im Browser gespeichert, offline nutzbar.',
     icon: IconNotes,
     color: 'yellow',
-    status: 'geplant',
+    status: 'lokal',
   },
   {
     key: 'files',
