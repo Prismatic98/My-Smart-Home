@@ -15,8 +15,12 @@ services:
         # Aus .env.prod (nicht im Repo). Vite backt die Werte in das Bundle –
         # nach einer Änderung an .env.prod muss neu gebaut werden.
         # Leer = App spricht Home Assistant über die eigene Origin an.
+        #
+        # Bewusst mit :- statt :? — Compose interpoliert bei JEDEM Unterkommando,
+        # ein Pflicht-Guard würde also auch `logs`, `ps` oder `down` blockieren,
+        # sobald --env-file fehlt. Dass der Token da ist, prüft das Dockerfile.
         VITE_HA_URL: ${VITE_HA_URL:-}
-        VITE_HA_TOKEN: ${VITE_HA_TOKEN:?VITE_HA_TOKEN fehlt – .env.prod anlegen (siehe .env.prod.example)}
+        VITE_HA_TOKEN: ${VITE_HA_TOKEN:-}
     image: my-smart-home:latest
     container_name: my-smart-home
     restart: unless-stopped

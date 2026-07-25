@@ -61,7 +61,17 @@ HA-Token zur Build-Zeit ins Bundle wandert):
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-docker compose -f docker-compose.prod.yml logs -f app
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f app
+```
+
+Compose löst `${...}` bei *jedem* Unterkommando auf, `--env-file .env.prod`
+gehört also überall dran — auch an `logs`, `ps` oder `down`. Wer sich das
+sparen will, setzt es einmal pro Shell (`COMPOSE_ENV_FILES` ab Compose 2.24):
+
+```bash
+export COMPOSE_FILE=docker-compose.prod.yml
+export COMPOSE_ENV_FILES=.env.prod
+docker compose up -d --build     # ab jetzt ohne Flags
 ```
 
 Nach außen freigeben:
