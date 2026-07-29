@@ -30,6 +30,11 @@ export function renameEntry({ path, newName }) {
   return backendRequest('/files/rename', { method: 'PATCH', body: { path, newName } });
 }
 
+/** In einen anderen Ordner verschieben. `targetPath` ist der Zielordner. */
+export function moveEntry({ path, targetPath }) {
+  return backendRequest('/files/move', { method: 'PATCH', body: { path, targetPath } });
+}
+
 /** Datei oder Ordner löschen (Ordner samt Inhalt). */
 export function deleteEntry(path) {
   return backendRequest(`/files/entry?${query({ path })}`, { method: 'DELETE' });

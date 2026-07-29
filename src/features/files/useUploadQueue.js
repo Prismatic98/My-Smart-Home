@@ -33,6 +33,12 @@ export function useUploadQueue({ onFileUploaded } = {}) {
   const requests = useRef(new Map());
   const samples = useRef(new Map());
   const started = useRef(new Set());
+  /**
+   * Abgebrochene IDs. Ein bereits laufender Request kann nach dem abort()
+   * noch ein load-Ereignis nachschieben (die Daten waren schon unterwegs) –
+   * ohne diese Merkliste würde daraus wieder ein „Fertig".
+   */
+  const canceled = useRef(new Set());
   const uploadedCallback = useRef(onFileUploaded);
 
   uploadedCallback.current = onFileUploaded;
@@ -64,17 +70,31 @@ export function useUploadQueue({ onFileUploaded } = {}) {
     return added.length;
   }, []);
 
+  /**
+   * Abbrechen – gilt für laufende wie für wartende Einträge.
+   *
+   * Der Status wird sofort gesetzt und nicht erst im abort-Ereignis: sonst
+   * hängt die Anzeige davon ab, ob und wann der Browser das Ereignis feuert.
+   * Bei einem Upload, der gerade fertig wird, kam es sonst gar nicht mehr.
+   */
   const cancel = useCallback((id) => {
-    const request = requests.current.get(id);
-    if (request) {
-      // löst onabort aus, der den Status setzt
-      request.abort();
-      return;
-    }
-    // Noch nicht gestartet: direkt aus der Schlange nehmen.
-    patch(id, { status: 'canceled' });
     started.current.add(id);
-  }, [patch]);
+    canceled.current.add(id);
+
+    const request = requests.current.get(id);
+    requests.current.delete(id);
+    samples.current.delete(id);
+
+    setItems((current) =>
+      current.map((item) =>
+        item.id === id && ACTIVE.has(item.status)
+          ? { ...item, status: 'canceled', etaSeconds: null, bytesPerSecond: null }
+          : item
+      )
+    );
+
+    request?.abort();
+  }, []);
 
   const remove = useCallback((id) => {
     requests.current.get(id)?.abort();
@@ -87,10 +107,19 @@ export function useUploadQueue({ onFileUploaded } = {}) {
   }, []);
 
   const cancelAll = useCallback(() => {
-    for (const request of requests.current.values()) request.abort();
-    setItems((current) =>
-      current.map((item) => (ACTIVE.has(item.status) ? { ...item, status: 'canceled' } : item))
-    );
+    setItems((current) => {
+      for (const item of current) {
+        if (!ACTIVE.has(item.status)) continue;
+        started.current.add(item.id);
+        canceled.current.add(item.id);
+        requests.current.get(item.id)?.abort();
+        requests.current.delete(item.id);
+        samples.current.delete(item.id);
+      }
+      return current.map((item) =>
+        ACTIVE.has(item.status) ? { ...item, status: 'canceled', etaSeconds: null } : item
+      );
+    });
   }, []);
 
   const startUpload = useCallback(
@@ -105,7 +134,7 @@ export function useUploadQueue({ onFileUploaded } = {}) {
       request.responseType = 'json';
 
       request.upload.addEventListener('progress', (event) => {
-        if (!event.lengthComputable) return;
+        if (!event.lengthComputable || canceled.current.has(item.id)) return;
 
         const now = performance.now();
         const recent = samples.current.get(item.id) ?? [];
@@ -131,6 +160,8 @@ export function useUploadQueue({ onFileUploaded } = {}) {
       const finish = (changes) => {
         requests.current.delete(item.id);
         samples.current.delete(item.id);
+        // Wer abgebrochen hat, soll nicht nachträglich ein Ergebnis sehen.
+        if (canceled.current.has(item.id)) return;
         patch(item.id, changes);
       };
 

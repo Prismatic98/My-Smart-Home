@@ -1,20 +1,10 @@
-import {
-  ActionIcon,
-  Button,
-  Group,
-  Menu,
-  SegmentedControl,
-  TextInput,
-  Tooltip,
-} from '@mantine/core';
+import { ActionIcon, Group, Menu, SegmentedControl, TextInput, Tooltip } from '@mantine/core';
 import {
   IconArrowsSort,
-  IconFolderPlus,
   IconLayoutGrid,
   IconList,
   IconRefresh,
   IconSearch,
-  IconUpload,
   IconX,
 } from '@tabler/icons-react';
 
@@ -31,9 +21,9 @@ const SORT_OPTIONS = [
  * Kopfzeile des Dateibrowsers: wo bin ich, was suche ich, wie sehe ich es an,
  * und was kann ich hier anlegen.
  *
- * Der Upload-Knopf löst das versteckte <input type="file"> der Seite aus –
- * auf dem Handy ist die Dateiauswahl der einzige Weg, Drag & Drop gibt es
- * dort nicht.
+ * Hochladen und „Neuer Ordner" sitzen bewusst nicht hier, sondern im runden
+ * Aktionsknopf unten rechts (FilesFab) – dort sind sie auch auf dem Handy mit
+ * dem Daumen erreichbar.
  */
 export default function FilesToolbar({
   path,
@@ -44,8 +34,6 @@ export default function FilesToolbar({
   onViewChange,
   sort,
   onSortChange,
-  onNewFolder,
-  onUploadClick,
   onRefresh,
   isFetching,
 }) {
@@ -120,20 +108,6 @@ export default function FilesToolbar({
           }
         />
 
-        <Group gap="xs" wrap="nowrap" className={classes.toolbarActions}>
-          <Button
-            variant="default"
-            size="sm"
-            leftSection={<IconFolderPlus size={16} />}
-            onClick={onNewFolder}
-          >
-            Ordner
-          </Button>
-
-          <Button size="sm" leftSection={<IconUpload size={16} />} onClick={onUploadClick}>
-            Hochladen
-          </Button>
-        </Group>
       </Group>
     </div>
   );

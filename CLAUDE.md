@@ -100,7 +100,10 @@ Offen: Vorschau, Thumbnails, Papierkorb, Google-Drive-Sync – bewusst später.
   der Browser zeigt immer den echten Zustand des Pi. TanStack Query ist hier
   die einzige Datenschicht (Query-Key `['files','list',path]`).
 - Endpunkte unter `/backend/files`: `GET /list`, `POST /upload`, `POST /mkdir`,
-  `PATCH /rename`, `DELETE /entry`, `GET /download`, `GET /usage`.
+  `PATCH /rename`, `PATCH /move`, `DELETE /entry`, `GET /download`, `GET /usage`.
+- Umbenennen und Verschieben sind getrennt: `/rename` ändert nur den Namen,
+  `/move` nur das Verzeichnis. Zielordner wird über einen kleinen Ordner-Browser
+  gewählt (kein Drag & Drop – auf dem Handy nicht bedienbar).
 - **Sicherheitsregel:** Kein Pfad aus einem Request darf das Dateisystem
   erreichen, ohne durch `resolveSafePath()` (server/src/files/paths.js) gelaufen
   zu sein. Die Prüfung läuft über `path.relative` gegen die Wurzel, nicht über

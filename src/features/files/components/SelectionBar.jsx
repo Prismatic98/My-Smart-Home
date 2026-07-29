@@ -1,10 +1,10 @@
 import { Button, Group, Paper, Text } from '@mantine/core';
-import { IconTrash, IconX } from '@tabler/icons-react';
+import { IconArrowRight, IconTrash, IconX } from '@tabler/icons-react';
 
 import classes from '../Files.module.scss';
 
 /** Erscheint, sobald etwas markiert ist, und ersetzt solange die Werkzeugleiste nicht. */
-export default function SelectionBar({ count, onClear, onDelete }) {
+export default function SelectionBar({ count, onClear, onMove, onDelete }) {
   if (count === 0) return null;
 
   return (
@@ -14,6 +14,14 @@ export default function SelectionBar({ count, onClear, onDelete }) {
           {count === 1 ? '1 Eintrag ausgewählt' : `${count} Einträge ausgewählt`}
         </Text>
         <Group gap="xs" wrap="nowrap">
+          <Button
+            size="xs"
+            variant="light"
+            leftSection={<IconArrowRight size={14} />}
+            onClick={onMove}
+          >
+            Verschieben
+          </Button>
           <Button
             size="xs"
             variant="light"

@@ -98,6 +98,37 @@ export async function renameEntry(absPath, newName) {
   return target;
 }
 
+/**
+ * Verschiebt einen Eintrag in ein anderes Verzeichnis.
+ *
+ * Wie beim Umbenennen wird vorher auf Kollision geprüft, weil rename() ein
+ * vorhandenes Ziel sonst kommentarlos ersetzt.
+ */
+export async function moveEntry(absPath, targetDirAbs) {
+  const name = path.basename(absPath);
+  const target = path.join(targetDirAbs, name);
+
+  if (target === absPath) return target;
+
+  if (await exists(target)) {
+    throw alreadyExists(`Im Zielordner gibt es „${name}" bereits.`);
+  }
+
+  try {
+    await rename(absPath, target);
+  } catch (cause) {
+    if (cause.code === 'EXDEV') {
+      // Kann nur auftreten, wenn innerhalb der Ablage mehrere Dateisysteme
+      // gemountet sind. Kopieren wäre möglich, ist hier aber bewusst nicht
+      // eingebaut – lieber eine klare Meldung als ein stiller Sonderweg.
+      throw ioError('Quelle und Ziel liegen auf verschiedenen Dateisystemen.');
+    }
+    throw ioError(`Verschieben fehlgeschlagen: ${cause.message}`);
+  }
+
+  return target;
+}
+
 /** Löscht Datei oder Ordner, Ordner rekursiv. */
 export async function removeEntry(absPath) {
   try {

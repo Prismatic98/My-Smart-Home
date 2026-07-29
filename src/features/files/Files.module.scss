@@ -1,10 +1,15 @@
 // Styles der Dateiablage. Breakpoints und px-to-rem kommen aus
 // src/styles/_mantine.scss (wird über vite.config.js automatisch eingebunden).
 
+// Maße des runden Aktionsknopfs unten rechts. Das Upload-Panel richtet sich
+// danach aus, damit sich beide nicht überlappen.
+$fab-size: 56px;
+$fab-inset: 24px;
+
 .page {
-  // Platz für das Upload-Panel unten rechts, damit es die Fußzeile nicht
-  // verdeckt, wenn die Liste bis unten reicht.
-  padding-bottom: px-to-rem(72px);
+  // Platz für Aktionsknopf und Upload-Panel, damit sie die Fußzeile nicht
+  // verdecken, wenn die Liste bis unten reicht.
+  padding-bottom: px-to-rem(96px);
 }
 
 // --- Werkzeugleiste --------------------------------------------------------
@@ -49,20 +54,6 @@
 .search {
   flex: 1 1 px-to-rem(220px);
   min-width: px-to-rem(180px);
-}
-
-.toolbarActions {
-  flex: 0 0 auto;
-
-  @media (max-width: $mantine-breakpoint-xs) {
-    // Auf dem Handy nehmen die beiden Knöpfe die volle Breite ein,
-    // sonst quetscht sich alles in eine unbedienbare Zeile.
-    flex: 1 1 100%;
-
-    > * {
-      flex: 1;
-    }
-  }
 }
 
 // --- Kachelansicht ---------------------------------------------------------
@@ -133,10 +124,19 @@
   backdrop-filter: blur(px-to-rem(2px));
 }
 
+.fab {
+  position: fixed;
+  right: px-to-rem($fab-inset);
+  bottom: px-to-rem($fab-inset);
+  z-index: 320;
+  box-shadow: var(--mantine-shadow-lg);
+}
+
 .uploadPanel {
   position: fixed;
-  right: var(--mantine-spacing-md);
-  bottom: var(--mantine-spacing-md);
+  right: px-to-rem($fab-inset);
+  // Oberhalb des Aktionsknopfs, damit beide nebeneinander bedienbar bleiben.
+  bottom: px-to-rem($fab-inset + $fab-size + 12px);
   width: px-to-rem(360px);
   max-width: calc(100vw - #{px-to-rem(32px)});
   z-index: 300;
@@ -152,6 +152,39 @@
 
 .uploadList {
   padding: px-to-rem(4px) 0;
+  // Eigenes Scrollen statt ScrollArea: Collapse kann die Höhe eines absolut
+  // positionierten ScrollArea-Viewports nicht messen, das Ausklappen tat dann
+  // nichts.
+  max-height: px-to-rem(260px);
+  overflow-y: auto;
+}
+
+.cancelButton {
+  flex: 0 0 auto;
+}
+
+// --- Zielordner-Auswahl beim Verschieben -----------------------------------
+
+.movePicker {
+  border: px-to-rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-sm);
+  padding: px-to-rem(4px);
+}
+
+.moveRow {
+  display: block;
+  width: 100%;
+  padding: px-to-rem(8px) px-to-rem(10px);
+  border-radius: var(--mantine-radius-sm);
+
+  &:hover:not([data-disabled]) {
+    background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+  }
+
+  &[data-disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 }
 
 .uploadRow {

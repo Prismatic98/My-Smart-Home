@@ -102,7 +102,8 @@ Endpunkte unter `/backend/files`:
 | `GET` | `/list?path=/foo` | Inhalt eines Verzeichnisses |
 | `POST` | `/upload?path=/foo` | Multipart-Upload einer Datei |
 | `POST` | `/mkdir` | Ordner anlegen |
-| `PATCH` | `/rename` | Umbenennen |
+| `PATCH` | `/rename` | Umbenennen (nur der Name) |
+| `PATCH` | `/move` | In einen anderen Ordner verschieben |
 | `DELETE` | `/entry?path=…` | Löschen (Ordner rekursiv) |
 | `GET` | `/download?path=…` | Download, mit Range-Unterstützung |
 | `GET` | `/usage` | Belegter/freier Speicher |

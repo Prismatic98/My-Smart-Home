@@ -15,6 +15,7 @@ import {
   listDirectory,
   lookupMimeType,
   makeDirectory,
+  moveEntry,
   removeEntry,
   removeQuietly,
   renameEntry,
@@ -175,6 +176,59 @@ export default async function filesRoutes(app) {
       await renameEntry(absPath, newName);
 
       return { name: newName, path: toClientPath(path.posix.dirname(relPath), newName) };
+    }
+  );
+
+  /**
+   * Verschieben in einen anderen Ordner. Der Name bleibt, nur das
+   * Verzeichnis wechselt – Umbenennen und Verschieben bleiben getrennt.
+   */
+  app.patch(
+    '/move',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['path', 'targetPath'],
+          additionalProperties: false,
+          properties: {
+            path: { type: 'string', maxLength: 4096 },
+            targetPath: { type: 'string', maxLength: 4096 },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const { absPath, relPath, stats } = await resolveExisting(request.body.path, {
+        missingMessage: 'Der Eintrag existiert nicht (mehr).',
+      });
+
+      if (isRoot(relPath)) {
+        throw invalidPath('Das Wurzelverzeichnis lässt sich nicht verschieben.');
+      }
+
+      const { absPath: targetAbs, relPath: targetRel } = await resolveParentDirectory(
+        request.body.targetPath
+      );
+
+      // Einen Ordner in sich selbst zu schieben würde den Teilbaum abhängen –
+      // rename() lässt das teils sogar zu und hinterlässt ein Durcheinander.
+      if (stats.isDirectory()) {
+        const inside = path.relative(absPath, targetAbs);
+        if (inside === '' || (!inside.startsWith('..') && !path.isAbsolute(inside))) {
+          throw invalidPath('Ein Ordner lässt sich nicht in sich selbst verschieben.');
+        }
+      }
+
+      if (path.dirname(absPath) === targetAbs) {
+        // Schon am Ziel – kein Fehler, aber auch nichts zu tun.
+        return { path: relPath, moved: false };
+      }
+
+      const name = path.posix.basename(relPath);
+      await moveEntry(absPath, targetAbs);
+
+      return { name, path: toClientPath(targetRel, name), moved: true };
     }
   );
 

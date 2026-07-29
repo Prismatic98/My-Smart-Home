@@ -1,11 +1,11 @@
 import { ActionIcon, Menu } from '@mantine/core';
-import { IconDots, IconDownload, IconPencil, IconTrash } from '@tabler/icons-react';
+import { IconArrowRight, IconDots, IconDownload, IconPencil, IconTrash } from '@tabler/icons-react';
 
 /**
  * Aktionen pro Eintrag. Wird sowohl vom Drei-Punkte-Knopf als auch vom
  * Rechtsklick benutzt – deshalb ist das Target austauschbar.
  */
-export default function FileEntryMenu({ entry, onDownload, onRename, onDelete, children }) {
+export default function FileEntryMenu({ entry, onDownload, onRename, onMove, onDelete, children }) {
   return (
     <Menu position="bottom-end" withinPortal shadow="md" width={180}>
       <Menu.Target>
@@ -29,6 +29,9 @@ export default function FileEntryMenu({ entry, onDownload, onRename, onDelete, c
         )}
         <Menu.Item leftSection={<IconPencil size={16} />} onClick={() => onRename(entry)}>
           Umbenennen
+        </Menu.Item>
+        <Menu.Item leftSection={<IconArrowRight size={16} />} onClick={() => onMove(entry)}>
+          Verschieben
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item color="red" leftSection={<IconTrash size={16} />} onClick={() => onDelete(entry)}>

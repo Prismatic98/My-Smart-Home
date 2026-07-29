@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { createFolder, deleteEntry, fetchUsage, joinPath, listDirectory, renameEntry } from './api.js';
+import {
+  createFolder,
+  deleteEntry,
+  fetchUsage,
+  joinPath,
+  listDirectory,
+  moveEntry,
+  renameEntry,
+} from './api.js';
 
 /**
  * TanStack-Query-Schicht der Dateiablage.
@@ -142,6 +150,61 @@ export function useDeleteEntries(path) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: filesKeys.list(path) });
       queryClient.invalidateQueries({ queryKey: filesKeys.usage() });
+    },
+  });
+}
+
+/**
+ * Verschieben in einen anderen Ordner.
+ *
+ * Optimistisch aus der aktuellen Liste entfernen; der Zielordner wird
+ * anschließend ebenfalls invalidiert, damit er beim Hinnavigieren stimmt.
+ */
+export function useMoveEntries(path) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ entries, targetPath }) => {
+      const results = await Promise.allSettled(
+        entries.map((entry) => moveEntry({ path: joinPath(path, entry.name), targetPath }))
+      );
+
+      const failed = results
+        .map((result, index) => ({ result, entry: entries[index] }))
+        .filter(({ result }) => result.status === 'rejected');
+
+      if (failed.length > 0) {
+        const [{ result, entry }] = failed;
+        const suffix = failed.length > 1 ? ` (und ${failed.length - 1} weitere)` : '';
+        throw new Error(
+          `„${entry.name}" ließ sich nicht verschieben: ${result.reason.message}${suffix}`
+        );
+      }
+
+      return { count: entries.length, targetPath };
+    },
+
+    onMutate: async ({ entries }) => {
+      await queryClient.cancelQueries({ queryKey: filesKeys.list(path) });
+      const snapshot = queryClient.getQueryData(filesKeys.list(path));
+      const moved = new Set(entries.map((entry) => entry.name));
+
+      queryClient.setQueryData(filesKeys.list(path), (current) =>
+        current
+          ? { ...current, entries: current.entries.filter((item) => !moved.has(item.name)) }
+          : current
+      );
+
+      return { snapshot };
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.snapshot) queryClient.setQueryData(filesKeys.list(path), context.snapshot);
+    },
+
+    onSettled: (_data, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: filesKeys.list(path) });
+      queryClient.invalidateQueries({ queryKey: filesKeys.list(variables.targetPath) });
     },
   });
 }

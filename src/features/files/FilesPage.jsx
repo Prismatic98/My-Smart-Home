@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Alert, Button, Container, Group, Skeleton, Stack } from '@mantine/core';
 import { useLocalStorage, useMediaQuery } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react';
 
 import PageHeader from '../../components/PageHeader/PageHeader.jsx';
@@ -9,8 +10,10 @@ import { joinPath, triggerDownload } from './api.js';
 import DeleteConfirmModal from './components/DeleteConfirmModal.jsx';
 import EmptyState from './components/EmptyState.jsx';
 import FileGrid from './components/FileGrid.jsx';
+import FilesFab from './components/FilesFab.jsx';
 import FileTable from './components/FileTable.jsx';
 import FilesToolbar from './components/FilesToolbar.jsx';
+import MoveModal from './components/MoveModal.jsx';
 import NewFolderModal from './components/NewFolderModal.jsx';
 import RenameModal from './components/RenameModal.jsx';
 import SelectionBar from './components/SelectionBar.jsx';
@@ -22,6 +25,7 @@ import {
   useDeleteEntries,
   useDirectory,
   useInvalidateAfterUpload,
+  useMoveEntries,
   useRenameEntry,
   useStorageUsage,
 } from './useFiles.js';
@@ -51,6 +55,7 @@ export default function FilesPage() {
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState(null);
   const [deleteTargets, setDeleteTargets] = useState([]);
+  const [moveTargets, setMoveTargets] = useState([]);
 
   // Auf Touch-Geräten gibt es keinen Doppelklick – dort öffnet der einfache Tipp.
   const isTouch = useMediaQuery('(pointer: coarse)');
@@ -61,6 +66,7 @@ export default function FilesPage() {
   const createFolder = useCreateFolder(path);
   const renameEntry = useRenameEntry(path);
   const deleteEntries = useDeleteEntries(path);
+  const moveEntries = useMoveEntries(path);
 
   const invalidateAfterUpload = useInvalidateAfterUpload();
   const uploads = useUploadQueue({
@@ -148,6 +154,26 @@ export default function FilesPage() {
     deleteEntries.reset();
   };
 
+  const closeMove = () => {
+    setMoveTargets([]);
+    moveEntries.reset();
+  };
+
+  const confirmMove = async (targetPath) => {
+    try {
+      const { count } = await moveEntries.mutateAsync({ entries: moveTargets, targetPath });
+      setSelected(new Set());
+      closeMove();
+      notifications.show({
+        color: 'teal',
+        title: count === 1 ? 'Verschoben' : `${count} Einträge verschoben`,
+        message: `Ziel: ${targetPath === '/' ? 'Ablage' : targetPath}`,
+      });
+    } catch {
+      // Der Fehler steht in moveEntries.error und wird im Modal angezeigt.
+    }
+  };
+
   const confirmDelete = async () => {
     try {
       await deleteEntries.mutateAsync(deleteTargets);
@@ -165,6 +191,7 @@ export default function FilesPage() {
     onOpen: open,
     onDownload: download,
     onRename: setRenameTarget,
+    onMove: (entry) => setMoveTargets([entry]),
     onDelete: (entry) => setDeleteTargets([entry]),
     singleClickOpens: Boolean(isTouch),
   };
@@ -186,8 +213,6 @@ export default function FilesPage() {
         onViewChange={setView}
         sort={sort}
         onSortChange={setSort}
-        onNewFolder={() => setNewFolderOpen(true)}
-        onUploadClick={openFilePicker}
         onRefresh={() => directory.refetch()}
         isFetching={directory.isFetching}
       />
@@ -208,6 +233,7 @@ export default function FilesPage() {
       <SelectionBar
         count={selected.size}
         onClear={() => setSelected(new Set())}
+        onMove={() => setMoveTargets(selectedEntries)}
         onDelete={() => setDeleteTargets(selectedEntries)}
       />
 
@@ -250,11 +276,14 @@ export default function FilesPage() {
 
       <UploadDropzone onDrop={startUpload} targetLabel={path === '/' ? 'Ablage' : path} />
 
+      <FilesFab onUpload={openFilePicker} onNewFolder={() => setNewFolderOpen(true)} />
+
       <UploadPanel
         items={uploads.items}
         activeCount={uploads.activeCount}
         overallPercent={uploads.overallPercent}
         onCancel={uploads.cancel}
+        onCancelAll={uploads.cancelAll}
         onRemove={uploads.remove}
         onClose={uploads.clearFinished}
       />
@@ -296,6 +325,16 @@ export default function FilesPage() {
             // Meldung steht im Modal.
           }
         }}
+      />
+
+      <MoveModal
+        opened={moveTargets.length > 0}
+        entries={moveTargets}
+        currentPath={path}
+        pending={moveEntries.isPending}
+        error={moveEntries.error}
+        onClose={closeMove}
+        onSubmit={confirmMove}
       />
 
       <DeleteConfirmModal
