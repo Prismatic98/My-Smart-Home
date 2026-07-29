@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { FileButton, Tooltip } from '@mantine/core';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor } from '@tiptap/react';
@@ -55,12 +55,20 @@ export default function NoteRichTextEditor({ noteId, initialBody, onChange }) {
     onUpdate: ({ editor: instance }) => changeHandler.current?.(instance.getHTML()),
   });
 
-  /** Blobs ablegen und als Knoten einsetzen. */
+  /**
+   * Blobs ablegen und als Knoten einsetzen.
+   *
+   * Nach dem await auf isDestroyed prüfen: wer das Modal währenddessen
+   * schließt, hinterlässt hier eine zerstörte Editor-Instanz. Das Bild bleibt
+   * gespeichert, wird aber nirgends eingefügt – reconcileNoteImages() räumt es
+   * beim Schließen wieder weg.
+   */
   const insertImages = useCallback(
     async (files) => {
       for (const file of files) {
         const image = await saveNoteImage({ noteId, blob: file });
-        editor?.chain().focus().insertNoteImage(image.id).run();
+        if (!editor || editor.isDestroyed) return;
+        editor.chain().focus().insertNoteImage(image.id).run();
       }
     },
     [editor, noteId]
@@ -93,18 +101,14 @@ export default function NoteRichTextEditor({ noteId, initialBody, onChange }) {
     [insertImages]
   );
 
-  // Beim Öffnen einer anderen Notiz den Inhalt austauschen, ohne den Editor
-  // neu zu bauen. `emitUpdate: false`, damit das nicht als Änderung des
-  // Nutzers zählt und die Notiz ungefragt als geändert markiert.
-  useEffect(() => {
-    if (!editor) return;
-    const next = toEditorHtml(initialBody);
-    if (editor.getHTML() !== next) {
-      editor.commands.setContent(next, { emitUpdate: false });
-    }
-    // Nur bei Notizwechsel, nicht bei jedem Tastendruck.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, noteId]);
+  // Kein Effekt, der den Inhalt nachträglich austauscht: NoteEditorModal
+  // rendert diese Komponente mit `key={noteId}`, jede Notiz bekommt also
+  // ohnehin eine frische Editor-Instanz mit dem richtigen `content`.
+  //
+  // Ein solcher Effekt hatte hier zuverlässig einen Absturz erzeugt: useEditor
+  // verwirft die zuerst erzeugte Instanz und legt eine neue an, während die
+  // Variable im laufenden Render-Durchlauf noch auf die alte zeigt. Der Aufruf
+  // von getHTML() traf dann eine zerstörte Instanz (schema === null).
 
   return (
     <RichTextEditor editor={editor} className={classes.editor}>
