@@ -1,10 +1,15 @@
 import { Button, Group, Paper, Text } from '@mantine/core';
-import { IconArrowRight, IconTrash, IconX } from '@tabler/icons-react';
+import { IconArrowRight, IconTrash } from '@tabler/icons-react';
 
 import classes from '../Files.module.scss';
 
-/** Erscheint, sobald etwas markiert ist, und ersetzt solange die Werkzeugleiste nicht. */
-export default function SelectionBar({ count, onClear, onMove, onDelete }) {
+/**
+ * Erscheint, sobald etwas markiert ist.
+ *
+ * Ohne „Aufheben"-Knopf: ein erneuter Klick auf den Eintrag nimmt die
+ * Markierung wieder weg, dafür braucht es keinen zweiten Weg.
+ */
+export default function SelectionBar({ count, onMove, onDelete }) {
   if (count === 0) return null;
 
   return (
@@ -30,9 +35,6 @@ export default function SelectionBar({ count, onClear, onMove, onDelete }) {
             onClick={onDelete}
           >
             Löschen
-          </Button>
-          <Button size="xs" variant="subtle" color="gray" leftSection={<IconX size={14} />} onClick={onClear}>
-            Aufheben
           </Button>
         </Group>
       </Group>

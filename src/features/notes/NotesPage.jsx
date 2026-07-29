@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Alert, Button, Container, Group, Skeleton, SimpleGrid } from '@mantine/core';
+import { Alert, Container, Group, Skeleton, SimpleGrid } from '@mantine/core';
 import { IconAlertTriangle, IconPlus } from '@tabler/icons-react';
 
-import PageHeader from '../../components/PageHeader/PageHeader.jsx';
+import ActionFab from '../../components/ActionFab/ActionFab.jsx';
 import DeleteNoteModal from './components/DeleteNoteModal.jsx';
 import NoteCard from './components/NoteCard.jsx';
 import NoteEditorModal from './components/NoteEditorModal.jsx';
@@ -56,25 +56,17 @@ export default function NotesPage() {
     }
   }
 
+  // pb: Platz für den Aktionsknopf unten rechts, damit er die letzte
+  // Kartenreihe nicht verdeckt.
   return (
-    <Container size="lg" px={0}>
-      <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
-        <PageHeader
-          title="Notizen"
-          badge="offline-fähig"
-          description="Gespeichert im Browser (IndexedDB) und im Hintergrund mit dem Pi abgeglichen. Bearbeiten geht auch ohne Netz."
+    <Container size="lg" px={0} pb={96}>
+      <Group justify="flex-end" mb="sm">
+        <SyncStatus
+          status={sync.status}
+          lastSyncedAt={sync.lastSyncedAt}
+          error={sync.error}
+          onRetry={sync.sync}
         />
-        <Group gap="md" wrap="nowrap">
-          <SyncStatus
-            status={sync.status}
-            lastSyncedAt={sync.lastSyncedAt}
-            error={sync.error}
-            onRetry={sync.sync}
-          />
-          <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
-            Neue Notiz
-          </Button>
-        </Group>
       </Group>
 
       {error && (
@@ -118,6 +110,10 @@ export default function NotesPage() {
         note={deletion.note}
         onClose={closeDelete}
         onConfirm={handleDelete}
+      />
+
+      <ActionFab
+        actions={[{ key: 'new-note', label: 'Neue Notiz', icon: IconPlus, onClick: openCreate }]}
       />
     </Container>
   );

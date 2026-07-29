@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Alert, Button, Container, Group, Skeleton, Stack } from '@mantine/core';
-import { useLocalStorage, useMediaQuery } from '@mantine/hooks';
+import { useLocalStorage } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react';
+import { IconAlertTriangle, IconFolderPlus, IconRefresh, IconUpload } from '@tabler/icons-react';
 
-import PageHeader from '../../components/PageHeader/PageHeader.jsx';
+import ActionFab from '../../components/ActionFab/ActionFab.jsx';
 import { joinPath, triggerDownload } from './api.js';
 import DeleteConfirmModal from './components/DeleteConfirmModal.jsx';
 import EmptyState from './components/EmptyState.jsx';
 import FileGrid from './components/FileGrid.jsx';
-import FilesFab from './components/FilesFab.jsx';
 import FileTable from './components/FileTable.jsx';
 import FilesToolbar from './components/FilesToolbar.jsx';
 import MoveModal from './components/MoveModal.jsx';
@@ -56,9 +55,6 @@ export default function FilesPage() {
   const [renameTarget, setRenameTarget] = useState(null);
   const [deleteTargets, setDeleteTargets] = useState([]);
   const [moveTargets, setMoveTargets] = useState([]);
-
-  // Auf Touch-Geräten gibt es keinen Doppelklick – dort öffnet der einfache Tipp.
-  const isTouch = useMediaQuery('(pointer: coarse)');
 
   const directory = useDirectory(path);
   const usage = useStorageUsage();
@@ -111,12 +107,19 @@ export default function FilesPage() {
     [entries]
   );
 
-  const open = useCallback(
+  /**
+   * Ein Klick genügt: Ordner werden betreten, Dateien nur markiert.
+   *
+   * Herunterladen liegt bewusst im Kontextmenü. Ein Klick, der ungefragt
+   * einen Download auslöst, ist beim Durchsehen eines Ordners lästiger als
+   * ein Menüeintrag mehr.
+   */
+  const activate = useCallback(
     (entry) => {
       if (entry.type === 'dir') navigate(joinPath(path, entry.name));
-      else triggerDownload(joinPath(path, entry.name), entry.name);
+      else toggle(entry.name);
     },
-    [navigate, path]
+    [navigate, path, toggle]
   );
 
   const download = useCallback(
@@ -188,22 +191,15 @@ export default function FilesPage() {
     entries,
     selected,
     onToggle: toggle,
-    onOpen: open,
+    onActivate: activate,
     onDownload: download,
     onRename: setRenameTarget,
     onMove: (entry) => setMoveTargets([entry]),
     onDelete: (entry) => setDeleteTargets([entry]),
-    singleClickOpens: Boolean(isTouch),
   };
 
   return (
     <Container size="xl" px={0} className={classes.page}>
-      <PageHeader
-        title="Datenablage"
-        badge="auf dem Pi"
-        description="Dateien hochladen, ordnen und wieder herunterladen – gespeichert auf der SSD des Raspberry Pi."
-      />
-
       <FilesToolbar
         path={path}
         onNavigate={navigate}
@@ -232,7 +228,6 @@ export default function FilesPage() {
 
       <SelectionBar
         count={selected.size}
-        onClear={() => setSelected(new Set())}
         onMove={() => setMoveTargets(selectedEntries)}
         onDelete={() => setDeleteTargets(selectedEntries)}
       />
@@ -276,7 +271,22 @@ export default function FilesPage() {
 
       <UploadDropzone onDrop={startUpload} targetLabel={path === '/' ? 'Ablage' : path} />
 
-      <FilesFab onUpload={openFilePicker} onNewFolder={() => setNewFolderOpen(true)} />
+      <ActionFab
+        actions={[
+          {
+            key: 'upload',
+            label: 'Dateien hochladen',
+            icon: IconUpload,
+            onClick: openFilePicker,
+          },
+          {
+            key: 'folder',
+            label: 'Neuer Ordner',
+            icon: IconFolderPlus,
+            onClick: () => setNewFolderOpen(true),
+          },
+        ]}
+      />
 
       <UploadPanel
         items={uploads.items}

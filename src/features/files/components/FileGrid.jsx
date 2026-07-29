@@ -9,19 +9,19 @@ import classes from '../Files.module.scss';
 /**
  * Kachelansicht.
  *
- * Geöffnet wird per Doppelklick – auf Touch-Geräten per einfachem Tipp, weil
- * es dort keinen Doppelklick gibt (`singleClickOpens`). Markiert wird über die
- * Checkbox, damit sich Öffnen und Auswählen nie in die Quere kommen.
+ * Ein Klick genügt: auf einem Ordner geht es hinein, auf einer Datei wird sie
+ * markiert. Kein Doppelklick – den gibt es auf dem Handy ohnehin nicht, und
+ * zwei verschiedene Klick-Bedeutungen auf derselben Kachel wären nur verwirrend.
  */
 export default function FileGrid({
   entries,
   selected,
   onToggle,
-  onOpen,
+  onActivate,
   onDownload,
   onRename,
+  onMove,
   onDelete,
-  singleClickOpens,
 }) {
   return (
     <SimpleGrid cols={{ base: 2, sm: 3, lg: 4, xl: 5 }} spacing="sm">
@@ -36,11 +36,10 @@ export default function FileGrid({
             radius="md"
             padding="sm"
             className={`${classes.gridCard} ${isSelected ? classes.gridCardSelected : ''}`}
-            onClick={singleClickOpens ? () => onOpen(entry) : undefined}
-            onDoubleClick={singleClickOpens ? undefined : () => onOpen(entry)}
+            onClick={() => onActivate(entry)}
             tabIndex={0}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') onOpen(entry);
+              if (event.key === 'Enter') onActivate(entry);
             }}
           >
             <Group justify="space-between" wrap="nowrap" mb={4}>
@@ -55,6 +54,7 @@ export default function FileGrid({
                 entry={entry}
                 onDownload={onDownload}
                 onRename={onRename}
+                onMove={onMove}
                 onDelete={onDelete}
               />
             </Group>

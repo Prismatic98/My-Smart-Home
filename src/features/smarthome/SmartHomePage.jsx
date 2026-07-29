@@ -12,7 +12,6 @@ import {
 } from '@mantine/core';
 import { IconAlertTriangle, IconBulbOff } from '@tabler/icons-react';
 
-import PageHeader from '../../components/PageHeader/PageHeader.jsx';
 import { useEntitiesByDomain, useHomeAssistant } from '../../lib/HAProvider.jsx';
 import HaStatusAlert from './components/HaStatusAlert.jsx';
 import LightCard from './components/LightCard.jsx';
@@ -27,12 +26,10 @@ export default function SmartHomePage() {
 
   return (
     <Container size="lg" px={0}>
-      <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
-        <PageHeader
-          title="Smart Home"
-          badge={`${lights.length} ${lights.length === 1 ? 'Lampe' : 'Lampen'}`}
-          description="Lichter live über Home Assistant steuern. Zustände kommen per WebSocket-Subscription."
-        />
+      {/* Bleibt als einziges Kopf-Element: der Verbindungszustand ist echte
+          Information, keine Beschreibung. HaStatusAlert meldet sich nur bei
+          Problemen, dieser Punkt zeigt auch den Normalfall. */}
+      <Group justify="flex-end" mb="sm">
         <Badge
           variant="dot"
           color={status === 'connected' ? 'teal' : 'gray'}

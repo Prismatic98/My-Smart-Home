@@ -13,6 +13,8 @@ import classes from '../Files.module.scss';
  * Auf schmalen Bildschirmen bleiben nur Name und Menü stehen (die übrigen
  * Spalten blendet Files.module.scss aus) – Größe und Datum stehen dann in der
  * zweiten Zeile unter dem Namen.
+ *
+ * Ein Klick auf die Zeile betritt den Ordner bzw. markiert die Datei.
  */
 export default function FileTable({
   entries,
@@ -21,11 +23,11 @@ export default function FileTable({
   onSortChange,
   onToggle,
   onToggleAll,
-  onOpen,
+  onActivate,
   onDownload,
   onRename,
+  onMove,
   onDelete,
-  singleClickOpens,
 }) {
   const allSelected = entries.length > 0 && entries.every((entry) => selected.has(entry.name));
   const someSelected = entries.some((entry) => selected.has(entry.name)) && !allSelected;
@@ -72,8 +74,7 @@ export default function FileTable({
               key={entry.name}
               className={classes.row}
               data-selected={selected.has(entry.name) || undefined}
-              onClick={singleClickOpens ? () => onOpen(entry) : undefined}
-              onDoubleClick={singleClickOpens ? undefined : () => onOpen(entry)}
+              onClick={() => onActivate(entry)}
             >
               <Table.Td onClick={(event) => event.stopPropagation()}>
                 <Checkbox
@@ -119,6 +120,7 @@ export default function FileTable({
                   entry={entry}
                   onDownload={onDownload}
                   onRename={onRename}
+                  onMove={onMove}
                   onDelete={onDelete}
                 />
               </Table.Td>

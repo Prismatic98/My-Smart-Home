@@ -1,0 +1,85 @@
+// Maße liegen hier, weil sich andere fixierte Elemente daran ausrichten
+// (z. B. das Upload-Panel der Dateiablage).
+
+.wrapper {
+  position: fixed;
+  right: px-to-rem(24px);
+  bottom: px-to-rem(24px);
+  z-index: 320;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: px-to-rem(14px);
+
+  // Die Aktionen belegen ihren Platz auch im geschlossenen Zustand – sie sind
+  // nur durchsichtig. Ohne das hier läge ein unsichtbarer Block über der Seite
+  // und würde Klicks auf den Inhalt darunter abfangen. Klickbar ist deshalb
+  // nur, was es auch sein soll.
+  pointer-events: none;
+}
+
+.actions {
+  display: flex;
+  // Umgekehrt, damit der erste Eintrag der Liste dem Knopf am nächsten liegt.
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: px-to-rem(12px);
+  pointer-events: none;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: px-to-rem(10px);
+
+  opacity: 0;
+  // Startpunkt: klein und auf Höhe des Knopfes, damit es aussieht, als käme
+  // der Eintrag aus ihm heraus.
+  transform: translateY(px-to-rem(20px)) scale(0.6);
+  transition:
+    opacity 160ms ease,
+    transform 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.actions[data-opened] {
+  pointer-events: auto;
+
+  .action {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.actionLabel {
+  // Kein Hintergrund – die Beschriftung steht frei über der Seite. Der
+  // Schatten hält sie auch über hellen Kacheln lesbar.
+  color: var(--mantine-color-text);
+  white-space: nowrap;
+  text-shadow: 0 px-to-rem(1px) px-to-rem(3px) var(--mantine-color-body);
+}
+
+.actionButton {
+  box-shadow: var(--mantine-shadow-md);
+}
+
+.fab {
+  box-shadow: var(--mantine-shadow-lg);
+  pointer-events: auto;
+}
+
+.fabIcon {
+  transition: transform 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+
+  // 45° aus dem Plus macht optisch ein Kreuz: erneut tippen schließt.
+  &[data-opened] {
+    transform: rotate(45deg);
+  }
+}
+
+// Wer Bewegung reduziert haben will, bekommt das Ein-/Ausblenden ohne Fahrt.
+@media (prefers-reduced-motion: reduce) {
+  .action,
+  .fabIcon {
+    transition-duration: 1ms;
+  }
+}

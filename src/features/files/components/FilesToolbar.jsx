@@ -22,7 +22,7 @@ const SORT_OPTIONS = [
  * und was kann ich hier anlegen.
  *
  * Hochladen und „Neuer Ordner" sitzen bewusst nicht hier, sondern im runden
- * Aktionsknopf unten rechts (FilesFab) – dort sind sie auch auf dem Handy mit
+ * Aktionsknopf unten rechts (ActionFab) – dort sind sie auch auf dem Handy mit
  * dem Daumen erreichbar.
  */
 export default function FilesToolbar({

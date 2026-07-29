@@ -1,8 +1,9 @@
 // Styles der Dateiablage. Breakpoints und px-to-rem kommen aus
 // src/styles/_mantine.scss (wird über vite.config.js automatisch eingebunden).
 
-// Maße des runden Aktionsknopfs unten rechts. Das Upload-Panel richtet sich
-// danach aus, damit sich beide nicht überlappen.
+// Maße des runden Aktionsknopfs (components/ActionFab). Das Upload-Panel
+// richtet sich danach aus, damit sich beide nicht überlappen – bei einer
+// Änderung dort muss das hier mitwandern.
 $fab-size: 56px;
 $fab-inset: 24px;
 
@@ -124,24 +125,22 @@ $fab-inset: 24px;
   backdrop-filter: blur(px-to-rem(2px));
 }
 
-.fab {
-  position: fixed;
-  right: px-to-rem($fab-inset);
-  bottom: px-to-rem($fab-inset);
-  z-index: 320;
-  box-shadow: var(--mantine-shadow-lg);
-}
-
 .uploadPanel {
   position: fixed;
   right: px-to-rem($fab-inset);
   // Oberhalb des Aktionsknopfs, damit beide nebeneinander bedienbar bleiben.
   bottom: px-to-rem($fab-inset + $fab-size + 12px);
-  width: px-to-rem(360px);
+  width: px-to-rem(420px);
   max-width: calc(100vw - #{px-to-rem(32px)});
   z-index: 300;
   overflow: hidden;
   background: var(--mantine-color-body);
+
+  // Während des Uploads deutlich sichtbar – das ist der Moment, in dem man
+  // hinschauen und notfalls abbrechen können muss.
+  &[data-uploading] {
+    border-color: var(--mantine-color-teal-5);
+  }
 
   @media (max-width: $mantine-breakpoint-xs) {
     left: var(--mantine-spacing-sm);
@@ -150,11 +149,19 @@ $fab-inset: 24px;
   }
 }
 
+.uploadHeader {
+  padding: var(--mantine-spacing-sm);
+  border-bottom: px-to-rem(1px) solid
+    light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+}
+
+.uploadFooter {
+  padding: var(--mantine-spacing-sm);
+  border-top: px-to-rem(1px) solid
+    light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+}
+
 .uploadList {
-  padding: px-to-rem(4px) 0;
-  // Eigenes Scrollen statt ScrollArea: Collapse kann die Höhe eines absolut
-  // positionierten ScrollArea-Viewports nicht messen, das Ausklappen tat dann
-  // nichts.
   max-height: px-to-rem(260px);
   overflow-y: auto;
 }
@@ -188,7 +195,7 @@ $fab-inset: 24px;
 }
 
 .uploadRow {
-  padding: px-to-rem(6px) var(--mantine-spacing-sm);
+  padding: px-to-rem(10px) var(--mantine-spacing-sm);
 
   & + & {
     border-top: px-to-rem(1px) solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
