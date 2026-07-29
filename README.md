@@ -55,6 +55,27 @@ Die Notizen sind local-first: geschrieben wird immer nur nach IndexedDB, die
 Liste liest über `useLiveQuery` direkt aus Dexie. Der Abgleich mit dem Pi läuft
 davon getrennt im Hintergrund — fällt er aus, merkt man in der Bedienung nichts.
 
+Inhaltlich können Notizen: **Rich Text** (fett, kursiv, Überschriften, Zitate,
+Code), **Aufgabenlisten** zum Abhaken, **Links** und **Bilder** aus der
+Zwischenablage (Strg+V) oder per Drag & Drop. Favoriten (`★`) stehen in der
+Liste oben.
+
+Der Editor ist TipTap über `@mantine/tiptap` und wird per `React.lazy` erst
+geladen, wenn eine Notiz geöffnet wird — mit ~430 KB wäre er sonst der größte
+Posten im Hauptbundle.
+
+Bilder stehen im Notiz-HTML **nur als ID** (`<img data-image-id="…">`). Die
+Bytes liegen getrennt: lokal als Blob in Dexie, auf dem Server als Datei unter
+`NOTE_IMAGES_ROOT`. Dadurch bleibt der Notiz-Sync klein (Base64 im Body hätte
+jeden Abgleich mit Megabytes belastet), Einfügen funktioniert offline, und ein
+Bild wird pro Gerät genau einmal übertragen — geholt wird es erst beim Anzeigen.
+Endpunkte: `POST /notes/images?id=&noteId=`, `GET /notes/images/:id`,
+`DELETE /notes/images/:id`.
+
+Link-Vorschauen gibt es bewusst nicht: dafür müsste der Pi fremde Seiten
+abrufen, und ein präparierter Link könnte ihn auf interne Adressen wie
+Home Assistant unter `127.0.0.1:8123` zeigen lassen.
+
 ```
 UI ──schreibt──▶ Dexie ──useLiveQuery──▶ UI
                    ▲ ▼

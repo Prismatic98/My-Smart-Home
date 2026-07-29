@@ -2,9 +2,11 @@ import multipart from '@fastify/multipart';
 import Fastify from 'fastify';
 
 import { AppError } from './errors.js';
+import { createImageRepository } from './notes/imageStore.js';
 import { createNotesRepository } from './notesRepository.js';
 import filesRoutes from './routes/files.js';
 import healthRoutes from './routes/health.js';
+import noteImageRoutes from './routes/noteImages.js';
 import notesRoutes from './routes/notes.js';
 
 /** Obergrenze für einen einzelnen Upload. Muss zur Caddyfile passen. */
@@ -77,9 +79,11 @@ export function buildApp({ db, logger = true }) {
   );
 
   app.decorate('notes', createNotesRepository(db));
+  app.decorate('noteImages', createImageRepository(db));
 
   app.register(healthRoutes);
   app.register(notesRoutes);
+  app.register(noteImageRoutes);
   app.register(filesRoutes, { prefix: '/files' });
 
   return app;

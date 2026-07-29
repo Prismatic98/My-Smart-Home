@@ -16,11 +16,16 @@ const noteSchema = {
   properties: {
     id: { type: 'string', minLength: 1, maxLength: 64 },
     title: { type: 'string', maxLength: 500 },
-    body: { type: 'string', maxLength: 200_000 },
+    // Seit dem Rich-Text-Editor HTML statt Klartext. Bilder stecken NICHT
+    // darin, sondern nur als <img data-image-id="…"> – deshalb reicht ein
+    // Limit, das für Text großzügig ist, ohne den Sync zu belasten.
+    body: { type: 'string', maxLength: 1_000_000 },
     createdAt: { type: 'integer', minimum: 0 },
     updatedAt: { type: 'integer', minimum: 0 },
     // null = aktiv, Zahl = gelöscht (Tombstone).
     deletedAt: { type: ['integer', 'null'], minimum: 0 },
+    // 1 = Favorit, wird in der Liste oben angezeigt.
+    pinned: { type: 'integer', minimum: 0, maximum: 1, default: 0 },
   },
 };
 

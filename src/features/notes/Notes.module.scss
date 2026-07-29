@@ -1,0 +1,130 @@
+// Styles des Notiz-Editors.
+//
+// Die inneren Selektoren zielen auf das Markup, das TipTap erzeugt. Nur die
+// Klassen sind lokal (CSS Modules), Element- und Attributselektoren bleiben
+// unverändert – deshalb funktioniert die Verschachtelung hier ohne :global.
+
+.editor {
+  // Der Editor soll wachsen, aber das Modal nicht sprengen.
+  --editor-max-height: #{px-to-rem(480px)};
+}
+
+.editorContent {
+  min-height: px-to-rem(220px);
+  max-height: var(--editor-max-height);
+  overflow-y: auto;
+  padding: var(--mantine-spacing-sm);
+
+  &:focus {
+    outline: none;
+  }
+
+  // --- Aufgabenlisten ------------------------------------------------------
+  // Bringt Mantine nicht mit, weil TaskList keine Standard-Erweiterung ist.
+  ul[data-type='taskList'] {
+    list-style: none;
+    padding-left: 0;
+    margin: var(--mantine-spacing-xs) 0;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: px-to-rem(8px);
+
+      > label {
+        flex: 0 0 auto;
+        // Auf Höhe der ersten Textzeile statt am Kästchen-Oberrand.
+        margin-top: px-to-rem(3px);
+        user-select: none;
+      }
+
+      > div {
+        flex: 1;
+        min-width: 0;
+
+        // Absätze innerhalb eines Punktes sollen nicht wie eigene Blöcke wirken.
+        > p {
+          margin: 0;
+        }
+      }
+    }
+
+    // Erledigtes wird durchgestrichen und tritt zurück.
+    li[data-checked='true'] > div {
+      color: var(--mantine-color-dimmed);
+      text-decoration: line-through;
+    }
+
+    // Verschachtelte Listen einrücken.
+    ul[data-type='taskList'] {
+      margin-left: px-to-rem(22px);
+    }
+  }
+
+  input[type='checkbox'] {
+    cursor: pointer;
+    accent-color: var(--mantine-color-teal-6);
+  }
+
+  // --- Links ---------------------------------------------------------------
+  a {
+    color: var(--mantine-color-anchor);
+    text-decoration: underline;
+    text-decoration-thickness: px-to-rem(1px);
+    text-underline-offset: px-to-rem(2px);
+    word-break: break-word;
+  }
+
+  // --- Platzhalter ---------------------------------------------------------
+  p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--mantine-color-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+}
+
+// --- Bilder im Editor ------------------------------------------------------
+
+.imageNode {
+  position: relative;
+  display: block;
+  margin: var(--mantine-spacing-sm) 0;
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+  // Auch der Lade- und Fehlerzustand soll eine erkennbare Fläche haben.
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+
+  // Auswahl über ProseMirror sichtbar machen (atomarer Knoten).
+  &:global(.ProseMirror-selectednode) {
+    outline: px-to-rem(2px) solid var(--mantine-color-teal-5);
+    outline-offset: px-to-rem(1px);
+  }
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.imageRemove {
+  position: absolute;
+  top: px-to-rem(8px);
+  right: px-to-rem(8px);
+  opacity: 0;
+  transition: opacity 120ms ease;
+
+  .imageNode:hover &,
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+// Auf dem Handy gibt es kein Hover – dort bleibt der Knopf sichtbar.
+@media (hover: none) {
+  .imageRemove {
+    opacity: 1;
+  }
+}

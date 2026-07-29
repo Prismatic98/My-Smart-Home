@@ -50,6 +50,10 @@ services:
       DB_PATH: /data/notes.db
       # Wurzel der Dateiablage. Alles, was hochgeladen wird, landet darunter.
       FILES_ROOT: /data/files
+      # Bilder aus Notizen. Liegt innerhalb des /data-Mounts, braucht also
+      # keinen eigenen Bind-Mount – nur diesen Pfad, weil der Standard relativ
+      # zum Arbeitsverzeichnis im Container zeigen würde.
+      NOTE_IMAGES_ROOT: /data/note-images
       PORT: "3001"
       # NUR auf dem Loopback lauschen. Im Host-Netz wäre 0.0.0.0 sonst offen
       # im LAN – erreichbar sein soll der Server ausschließlich über Caddy.

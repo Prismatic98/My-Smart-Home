@@ -6,7 +6,7 @@
  */
 
 /** Spalten, die der Client sehen darf – `serverUpdatedAt` ist rein intern. */
-const WIRE_COLUMNS = 'id, title, body, createdAt, updatedAt, deletedAt';
+const WIRE_COLUMNS = 'id, title, body, createdAt, updatedAt, deletedAt, pinned';
 
 export function createNotesRepository(db) {
   const selectById = db.prepare('SELECT * FROM notes WHERE id = ?');
@@ -22,8 +22,8 @@ export function createNotesRepository(db) {
   );
 
   const insertNote = db.prepare(`
-    INSERT INTO notes (id, title, body, createdAt, updatedAt, deletedAt, serverUpdatedAt)
-    VALUES (@id, @title, @body, @createdAt, @updatedAt, @deletedAt, @serverUpdatedAt)
+    INSERT INTO notes (id, title, body, createdAt, updatedAt, deletedAt, pinned, serverUpdatedAt)
+    VALUES (@id, @title, @body, @createdAt, @updatedAt, @deletedAt, @pinned, @serverUpdatedAt)
   `);
 
   const updateNote = db.prepare(`
@@ -33,6 +33,7 @@ export function createNotesRepository(db) {
            createdAt = @createdAt,
            updatedAt = @updatedAt,
            deletedAt = @deletedAt,
+           pinned = @pinned,
            serverUpdatedAt = @serverUpdatedAt
      WHERE id = @id
   `);
@@ -116,5 +117,7 @@ function normalize(note) {
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
     deletedAt: note.deletedAt ?? null,
+    // SQLite kennt keinen Boolean – 0/1, wie auf der Client-Seite auch.
+    pinned: note.pinned ? 1 : 0,
   };
 }

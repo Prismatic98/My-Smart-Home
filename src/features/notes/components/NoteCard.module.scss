@@ -7,6 +7,17 @@
   }
 }
 
+// Favoriten stehen ohnehin oben; der gelbe Rand macht die Gruppe auch beim
+// Überfliegen erkennbar.
+.pinned {
+  border-color: var(--mantine-color-yellow-5);
+}
+
+.pinIcon {
+  color: var(--mantine-color-yellow-5);
+  flex: 0 0 auto;
+}
+
 .body {
   flex: 1;
   min-width: 0; // damit lineClamp im Flex-Container greift
@@ -21,4 +32,19 @@
 
 .preview {
   white-space: pre-wrap;
+}
+
+// Nachgebaute Kästchen der Aufgabenliste. Bewusst kein echtes <input>: in der
+// Vorschau soll nichts anklickbar sein, abgehakt wird im Editor.
+.checkbox {
+  flex: 0 0 auto;
+  width: px-to-rem(11px);
+  height: px-to-rem(11px);
+  border-radius: px-to-rem(3px);
+  border: px-to-rem(1.5px) solid var(--mantine-color-dimmed);
+
+  &[data-checked] {
+    background: var(--mantine-color-teal-6);
+    border-color: var(--mantine-color-teal-6);
+  }
 }

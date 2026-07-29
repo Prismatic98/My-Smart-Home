@@ -1,5 +1,7 @@
 import Dexie from 'dexie';
 
+import { textToHtml } from './lib/noteHtml.js';
+
 /**
  * Lokale Notizen-Datenbank (IndexedDB via Dexie).
  *
@@ -46,6 +48,41 @@ db.version(2)
         note.deletedAt = null;
         // Bestehende Notizen kennt der Server noch nicht. Als geändert
         // markieren, damit der erste Sync sie hochlädt und nichts verloren geht.
+        note.dirty = 1;
+      })
+  );
+
+/**
+ * Version 3 bringt Rich Text, Favoriten und Bilder.
+ *
+ * `body` enthält ab hier HTML statt Klartext. Bestehende Notizen werden beim
+ * Upgrade umgewandelt und mit neuem `updatedAt` als geändert markiert – damit
+ * gewinnt die umgewandelte Fassung beim Abgleich und wandert auf die anderen
+ * Geräte. Der Alternativweg (ein Feld `bodyFormat` im Sync-Protokoll) hätte
+ * dauerhaft Komplexität für eine einmalige Umstellung bedeutet.
+ *
+ * `pinned` wird als 0/1 gespeichert, nicht als Boolean – IndexedDB kann
+ * Booleans nicht indizieren.
+ *
+ * Tabelle `noteImages`: { id, noteId, blob, mimeType, size, createdAt,
+ * dirty, deletedAt }. Die Bilder liegen als Blob lokal; im Notiz-HTML steht
+ * nur <img data-image-id="…">. Dadurch bleibt der Notiz-Sync klein, und ein
+ * eingefügtes Bild ist auch offline sofort da.
+ */
+db.version(3)
+  .stores({
+    notes: 'id, updatedAt, createdAt, dirty, pinned',
+    noteImages: 'id, noteId, dirty',
+    meta: 'key',
+  })
+  .upgrade((tx) =>
+    tx
+      .table('notes')
+      .toCollection()
+      .modify((note) => {
+        note.pinned = 0;
+        note.body = textToHtml(note.body ?? '');
+        note.updatedAt = Math.max(Date.now(), (note.updatedAt ?? 0) + 1);
         note.dirty = 1;
       })
   );

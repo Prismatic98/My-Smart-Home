@@ -63,4 +63,38 @@ function migrate(db) {
     CREATE INDEX IF NOT EXISTS idx_notes_server_updated_at
       ON notes (serverUpdatedAt);
   `);
+
+  // Favoriten. Nachträglich ergänzt, deshalb als ALTER – bestehende Zeilen
+  // bekommen 0. `body` enthält seit dem Rich-Text-Editor HTML statt Klartext;
+  // für die Datenbank bleibt es eine Zeichenkette, es braucht also keine
+  // Migration der Inhalte (die macht der Client beim Dexie-Upgrade).
+  addColumnIfMissing(db, 'notes', 'pinned', 'INTEGER NOT NULL DEFAULT 0');
+
+  /**
+   * Bilder in Notizen.
+   *
+   * Nur die Metadaten stehen hier – die Bytes liegen als Datei unter
+   * NOTE_IMAGES_ROOT. Das hält die Datenbank klein und erlaubt Streaming beim
+   * Ausliefern. Im Notiz-HTML steht lediglich <img data-image-id="…">, der
+   * Sync der Notizen bleibt dadurch schlank.
+   */
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS note_images (
+      id              TEXT    PRIMARY KEY,
+      noteId          TEXT    NOT NULL,
+      mimeType        TEXT    NOT NULL,
+      size            INTEGER NOT NULL,
+      createdAt       INTEGER NOT NULL,
+      serverUpdatedAt INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_note_images_note ON note_images (noteId);
+  `);
+}
+
+/** SQLite kann kein "ADD COLUMN IF NOT EXISTS" – deshalb vorher nachsehen. */
+function addColumnIfMissing(db, table, column, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (columns.some((entry) => entry.name === column)) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }

@@ -74,12 +74,35 @@ Offen: Vorschau, Thumbnails, Papierkorb, Google-Drive-Sync – bewusst später.
 - Liegt in `server/` mit eigener package.json (Node + Fastify + better-sqlite3).
 - `DB_PATH` bestimmt die SQLite-Datei; auf dem Pi ein gemountetes Verzeichnis
   (WAL legt -wal/-shm daneben, deshalb Verzeichnis statt Datei mounten).
+- `FILES_ROOT` (Dateiablage) und `NOTE_IMAGES_ROOT` (Bilder aus Notizen) liegen
+  beide im gemounteten `/data` und brauchen daher keinen eigenen Bind-Mount.
 - `.npmrc` setzt `ignore-scripts=true`: better-sqlite3 bringt N-API-Prebuilds mit,
   npm würde wegen der binding.gyp sonst unnötig aus dem Quellcode bauen.
 - Basis-Image des Servers ist `node:22-trixie-slim`. Das Prebuild verlangt
   GLIBC 2.38; Bookworm hat nur 2.36 und der Container landet in einer
   Restart-Schleife. Ein Smoke-Test im Dockerfile fängt das beim Build ab.
 - Erreichbar nur über den Reverse-Proxy (`HOST=127.0.0.1`), daher ohne Auth.
+
+## Notizen-Inhalt
+- Der Body ist HTML aus TipTap (`@mantine/tiptap`), nicht mehr Klartext.
+  Bestehende Notizen wurden beim Dexie-Upgrade auf v3 umgewandelt.
+- Der Editor wird per `React.lazy` geladen – TipTap ist mit ~430 KB das größte
+  Einzelpaket und darf nicht im Hauptbundle landen.
+- Aufgabenlisten über TaskList/TaskItem; Links über die Link-Erweiterung des
+  StarterKits (nur http/https/mailto, kein `javascript:`). Link-Vorschauen sind
+  bewusst NICHT eingebaut – dafür müsste der Pi fremde Seiten abrufen.
+- Bilder stehen im HTML nur als `<img data-image-id="…">`. Die Bytes liegen
+  lokal als Blob in Dexie (`noteImages`) und auf dem Server als Datei unter
+  `NOTE_IMAGES_ROOT`; Metadaten in der Tabelle `note_images`. Base64 im Body
+  wäre der einfachere Weg gewesen, würde aber jeden Sync mit Megabytes belasten.
+- Pull der Bilder ist faul: erst beim Anzeigen (`useNoteImage`), dann lokal
+  gecacht. Push läuft im Notizen-Sync mit, Bilder vor den Notizen.
+- Verwaiste Bilder räumt `reconcileNoteImages(noteId, body)` weg – nach jedem
+  Speichern, Abbrechen und Löschen. Nie hochgeladene Bilder verschwinden sofort,
+  bereits hochgeladene bekommen einen Tombstone für den Server.
+- `pinned` (0/1) = Favorit, wird in der Liste oben einsortiert.
+- In der Kachelansicht wird der Body nur als Text ausgelesen, nie als HTML
+  eingesetzt.
 
 ## Notizen-Sync
 - Local-first bleibt: die UI schreibt und liest ausschließlich Dexie.

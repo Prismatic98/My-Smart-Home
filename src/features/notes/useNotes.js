@@ -10,7 +10,15 @@ import { getNote, listNotes } from './notesRepository.js';
  *
  * Schreiben geht direkt über die (re-exportierten) Repository-Funktionen.
  */
-export { createNote, updateNote, deleteNote } from './notesRepository.js';
+export {
+  createNote,
+  deleteNote,
+  getNote,
+  newNoteId,
+  reconcileNoteImages,
+  togglePinned,
+  updateNote,
+} from './notesRepository.js';
 
 /**
  * Alle Notizen, zuletzt bearbeitete zuerst.

@@ -1,6 +1,7 @@
 import { buildApp } from './app.js';
 import { openDatabase } from './db.js';
 import { ensureFilesRoot, FILES_ROOT } from './files/paths.js';
+import { ensureImagesRoot, NOTE_IMAGES_ROOT } from './notes/imageStore.js';
 
 /**
  * Einstiegspunkt. Konfiguration ausschließlich über Env-Variablen:
@@ -26,7 +27,8 @@ app.log.info({ dbPath: DB_PATH }, 'SQLite geöffnet');
 // auf dem gemounteten Verzeichnis sind der häufigste Stolperstein.
 try {
   await ensureFilesRoot();
-  app.log.info({ filesRoot: FILES_ROOT }, 'Dateiablage bereit');
+  await ensureImagesRoot();
+  app.log.info({ filesRoot: FILES_ROOT, noteImagesRoot: NOTE_IMAGES_ROOT }, 'Ablagen bereit');
 } catch (cause) {
   app.log.error(cause.message);
   process.exit(1);

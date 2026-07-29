@@ -1,5 +1,14 @@
 import { backendRequest } from '../../lib/backend.js';
-import { commitSyncResult, getLastSyncedAt, listDirtyNotes } from './notesRepository.js';
+import { deleteNoteImage, uploadNoteImage } from './imagesApi.js';
+import {
+  commitSyncResult,
+  forgetImage,
+  getLastSyncedAt,
+  listDirtyNotes,
+  listImagesToDelete,
+  listImagesToUpload,
+  markImageUploaded,
+} from './notesRepository.js';
 
 /**
  * Ein Sync-Durchlauf: Push und Pull in einem Round-Trip.
@@ -23,6 +32,10 @@ import { commitSyncResult, getLastSyncedAt, listDirtyNotes } from './notesReposi
  * (siehe `serverUpdatedAt` im Backend).
  */
 export async function syncNotes({ signal } = {}) {
+  // Bilder zuerst: sobald ein anderes Gerät das Notiz-HTML bekommt, muss es
+  // die darin referenzierten Bilder auch abrufen können.
+  const images = await syncNoteImages();
+
   const since = await getLastSyncedAt();
   const pushed = await listDirtyNotes();
 
@@ -43,6 +56,44 @@ export async function syncNotes({ signal } = {}) {
     pushed: pushed.length,
     accepted: response.applied ?? 0,
     applied,
+    images,
     syncedAt: Date.now(),
   };
+}
+
+/**
+ * Bilder hochladen und gelöschte auf dem Server wegräumen.
+ *
+ * Bewusst kein Pull: ein Bild wird erst geholt, wenn es angezeigt werden soll
+ * (siehe useNoteImage). Wer eine Notiz nie öffnet, lädt ihre Bilder auch nie.
+ *
+ * Fehler einzelner Bilder brechen den Durchlauf nicht ab – der Rest soll
+ * trotzdem durchgehen, und beim nächsten Lauf wird es erneut versucht.
+ */
+async function syncNoteImages() {
+  let uploaded = 0;
+  let removed = 0;
+  let failed = 0;
+
+  for (const image of await listImagesToUpload()) {
+    try {
+      await uploadNoteImage({ id: image.id, noteId: image.noteId, blob: image.blob });
+      await markImageUploaded(image.id);
+      uploaded += 1;
+    } catch {
+      failed += 1;
+    }
+  }
+
+  for (const image of await listImagesToDelete()) {
+    try {
+      await deleteNoteImage(image.id);
+      await forgetImage(image.id);
+      removed += 1;
+    } catch {
+      failed += 1;
+    }
+  }
+
+  return { uploaded, removed, failed };
 }
