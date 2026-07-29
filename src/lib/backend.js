@@ -20,10 +20,12 @@ const DEFAULT_TIMEOUT = 15_000;
 
 /** Fehler mit HTTP-Status, damit Aufrufer zwischen 4xx und 5xx unterscheiden können. */
 export class BackendError extends Error {
-  constructor(message, { status = 0, cause } = {}) {
+  constructor(message, { status = 0, code, cause } = {}) {
     super(message, { cause });
     this.name = 'BackendError';
     this.status = status;
+    /** Fehlercode des Servers, z. B. ALREADY_EXISTS – für gezielte Reaktionen. */
+    this.code = code;
   }
 }
 
@@ -56,22 +58,34 @@ export async function backendRequest(path, { method = 'GET', body, signal } = {}
   }
 
   if (!response.ok) {
-    throw new BackendError(await describeHttpError(response), { status: response.status });
+    const { message, code } = await describeHttpError(response);
+    throw new BackendError(message, { status: response.status, code });
   }
 
   return response.json();
 }
 
-/** Holt die Fehlermeldung aus dem Body, wenn der Server eine mitschickt. */
+/**
+ * Holt die Fehlermeldung aus dem Body.
+ *
+ * Der Server antwortet einheitlich mit `{ error: { code, message } }` und
+ * formuliert die Meldung bereits für Menschen – die wird deshalb unverändert
+ * durchgereicht statt mit einem Status-Präfix verunstaltet. Nur wenn nichts
+ * Brauchbares im Body steht, gibt es die technische Rückfallebene.
+ */
 async function describeHttpError(response) {
-  let detail = '';
   try {
     const payload = await response.json();
-    detail = payload?.message || payload?.error || '';
+    const message = payload?.error?.message ?? payload?.message;
+    if (message) {
+      return { message, code: payload?.error?.code };
+    }
   } catch {
     // Kein JSON – dann reicht der Status.
   }
-  return detail
-    ? `Backend antwortete mit ${response.status}: ${detail}`
-    : `Backend antwortete mit ${response.status} ${response.statusText}.`;
+
+  return {
+    message: `Das Backend antwortete mit ${response.status} ${response.statusText}.`,
+    code: undefined,
+  };
 }

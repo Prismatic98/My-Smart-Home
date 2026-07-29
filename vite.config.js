@@ -29,13 +29,31 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Nur die eigenen Build-Artefakte vorhalten. Backend-Antworten haben
+        // im Precache nichts verloren.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+
         // SPA: unbekannte Routen aus dem Cache mit index.html beantworten
         navigateFallback: 'index.html',
+
         // …aber nicht /api/* und /backend/*: dahinter liegen in Produktion
         // Home Assistant bzw. das eigene Backend (Reverse-Proxy). Diese
         // Requests müssen immer ans Netz gehen.
         navigateFallbackDenylist: [/^\/api\//, /^\/backend\//],
+
+        // WICHTIG für Uploads und Downloads: für /backend/* gibt es bewusst
+        // KEINEN runtimeCaching-Eintrag. Ohne passende Route ruft der
+        // Service Worker gar kein respondWith() auf, der Browser wickelt
+        // diese Requests also selbst ab.
+        //
+        // Auch eine NetworkOnly-Route wäre hier falsch: sie würde den
+        // Request durch den Worker leiten, und dabei gehen die
+        // Fortschritts-Events von XMLHttpRequest.upload verloren – der
+        // Upload-Balken stünde stumm auf 0 %. Range-Requests für spätere
+        // Video-Vorschau würden ebenfalls durch den Worker laufen.
+        // Deshalb: Liste bleibt leer.
+        runtimeCaching: [],
+
         cleanupOutdatedCaches: true,
       },
       devOptions: {

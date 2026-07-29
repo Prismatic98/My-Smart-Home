@@ -21,7 +21,7 @@ export const modules = [
     description: 'Dateien von überall hochladen, gespeichert auf der SSD des Raspberry Pi.',
     icon: IconFolders,
     color: 'teal',
-    status: 'geplant',
+    status: 'live',
   },
   {
     key: 'smarthome',

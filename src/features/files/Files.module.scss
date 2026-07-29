@@ -1,0 +1,184 @@
+// Styles der Dateiablage. Breakpoints und px-to-rem kommen aus
+// src/styles/_mantine.scss (wird über vite.config.js automatisch eingebunden).
+
+.page {
+  // Platz für das Upload-Panel unten rechts, damit es die Fußzeile nicht
+  // verdeckt, wenn die Liste bis unten reicht.
+  padding-bottom: px-to-rem(72px);
+}
+
+// --- Werkzeugleiste --------------------------------------------------------
+
+.toolbar {
+  margin-bottom: var(--mantine-spacing-md);
+}
+
+.breadcrumbs {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.crumbLink {
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--mantine-color-text);
+  }
+}
+
+.crumbCurrent {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: px-to-rem(220px);
+}
+
+.crumbButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 px-to-rem(4px);
+  color: var(--mantine-color-dimmed);
+  border-radius: var(--mantine-radius-sm);
+
+  &:hover {
+    background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+  }
+}
+
+.search {
+  flex: 1 1 px-to-rem(220px);
+  min-width: px-to-rem(180px);
+}
+
+.toolbarActions {
+  flex: 0 0 auto;
+
+  @media (max-width: $mantine-breakpoint-xs) {
+    // Auf dem Handy nehmen die beiden Knöpfe die volle Breite ein,
+    // sonst quetscht sich alles in eine unbedienbare Zeile.
+    flex: 1 1 100%;
+
+    > * {
+      flex: 1;
+    }
+  }
+}
+
+// --- Kachelansicht ---------------------------------------------------------
+
+.gridCard {
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease;
+
+  &:hover {
+    border-color: var(--mantine-color-teal-5);
+  }
+
+  &:focus-visible {
+    outline: px-to-rem(2px) solid var(--mantine-color-teal-5);
+    outline-offset: px-to-rem(2px);
+  }
+}
+
+.gridCardSelected {
+  border-color: var(--mantine-color-teal-5);
+  background: light-dark(var(--mantine-color-teal-0), rgba(32, 201, 151, 0.08));
+}
+
+// --- Listenansicht ---------------------------------------------------------
+
+.table {
+  table-layout: fixed;
+}
+
+.row {
+  cursor: pointer;
+
+  &[data-selected] {
+    background: light-dark(var(--mantine-color-teal-0), rgba(32, 201, 151, 0.08));
+  }
+}
+
+.nameCell {
+  min-width: 0;
+}
+
+// Größe und Datum stehen in der Tabelle in eigenen Spalten – die Kurzfassung
+// unter dem Namen ist nur für schmale Bildschirme gedacht.
+.nameMeta {
+  display: none;
+}
+
+.sortButton {
+  display: block;
+}
+
+@media (max-width: $mantine-breakpoint-sm) {
+  .colSize,
+  .colDate {
+    display: none;
+  }
+
+  .nameMeta {
+    display: block;
+  }
+}
+
+// --- Upload ----------------------------------------------------------------
+
+.dropzone {
+  // Das Vollbild-Overlay soll deutlich sichtbar sein, aber den Inhalt
+  // darunter noch erkennen lassen.
+  backdrop-filter: blur(px-to-rem(2px));
+}
+
+.uploadPanel {
+  position: fixed;
+  right: var(--mantine-spacing-md);
+  bottom: var(--mantine-spacing-md);
+  width: px-to-rem(360px);
+  max-width: calc(100vw - #{px-to-rem(32px)});
+  z-index: 300;
+  overflow: hidden;
+  background: var(--mantine-color-body);
+
+  @media (max-width: $mantine-breakpoint-xs) {
+    left: var(--mantine-spacing-sm);
+    right: var(--mantine-spacing-sm);
+    width: auto;
+  }
+}
+
+.uploadList {
+  padding: px-to-rem(4px) 0;
+}
+
+.uploadRow {
+  padding: px-to-rem(6px) var(--mantine-spacing-sm);
+
+  & + & {
+    border-top: px-to-rem(1px) solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  }
+}
+
+// --- Auswahl und Fußzeile --------------------------------------------------
+
+.selectionBar {
+  background: light-dark(var(--mantine-color-teal-0), var(--mantine-color-dark-6));
+  border-color: var(--mantine-color-teal-5);
+}
+
+.storageFooter {
+  max-width: px-to-rem(420px);
+}
+
+.storageIcon {
+  color: var(--mantine-color-dimmed);
+  flex: 0 0 auto;
+}
+
+.storageBar {
+  flex: 1;
+  min-width: px-to-rem(80px);
+}

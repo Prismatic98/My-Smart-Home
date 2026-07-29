@@ -2,9 +2,14 @@ import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { QueryClientProvider } from '@tanstack/react-query';
 
+// Reihenfolge zählt: die Styles der Zusatzpakete bauen auf denen von
+// @mantine/core auf, die eigenen kommen zuletzt.
 import '@mantine/core/styles.css';
+import '@mantine/dropzone/styles.css';
+import '@mantine/notifications/styles.css';
 import './styles/global.scss';
 
 import App from './App.jsx';
@@ -23,6 +28,7 @@ const ReactQueryDevtools = import.meta.env.DEV
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="dark">
+      <Notifications position="top-right" limit={4} />
       <QueryClientProvider client={queryClient}>
         {/* Hintergrundprozess ohne eigene Darstellung – siehe NotesSyncWorker. */}
         <NotesSyncWorker />

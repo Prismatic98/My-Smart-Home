@@ -2,8 +2,11 @@ node_modules/
 dist/
 dist-ssr/
 dev-dist/
+graphify-out
+.claude
 
-# SQLite-Daten des Backends (lokal wie auf dem Pi)
+# Daten des Backends (lokal wie auf dem Pi): SQLite-Datei und Dateiablage.
+# Im Dev landet die Ablage in server/data/files (Default von FILES_ROOT).
 data/
 server/data/
 

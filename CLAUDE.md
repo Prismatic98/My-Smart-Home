@@ -67,7 +67,8 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
 Infrastruktur steht (Pi, Docker, Home Assistant, Tailscale, Govee-Lampen).
 PWA-Grundgerüst, Notizen (Dexie) und Smart-Home-Anbindung laufen.
 Backend (Fastify + SQLite) mit Notizen-Sync steht, Deployment über Caddy.
-Nächster Schritt: Datei-Upload auf die SSD (Modul „Datenablage").
+Dateiablage (Upload, Dateibrowser, Download) läuft.
+Offen: Vorschau, Thumbnails, Papierkorb, Google-Drive-Sync – bewusst später.
 
 ## Backend
 - Liegt in `server/` mit eigener package.json (Node + Fastify + better-sqlite3).
@@ -92,6 +93,27 @@ Nächster Schritt: Datei-Upload auf die SSD (Modul „Datenablage").
 - Eine lokale Änderung bekommt immer einen Zeitstempel größer als der bisherige
   Stand der Notiz (nicht blind Date.now()).
 
+## Dateiablage
+- Dateien liegen im Dateisystem unter `FILES_ROOT` (Container `/data/files`,
+  Dev `server/data/files`), nicht in der Datenbank.
+- Bewusst OHNE Dexie- und Offline-Layer: Dateien sind reine Server-Daten,
+  der Browser zeigt immer den echten Zustand des Pi. TanStack Query ist hier
+  die einzige Datenschicht (Query-Key `['files','list',path]`).
+- Endpunkte unter `/backend/files`: `GET /list`, `POST /upload`, `POST /mkdir`,
+  `PATCH /rename`, `DELETE /entry`, `GET /download`, `GET /usage`.
+- **Sicherheitsregel:** Kein Pfad aus einem Request darf das Dateisystem
+  erreichen, ohne durch `resolveSafePath()` (server/src/files/paths.js) gelaufen
+  zu sein. Die Prüfung läuft über `path.relative` gegen die Wurzel, nicht über
+  `startsWith` – sonst käme `/data/files-alt` als Treffer durch. Symlinks werden
+  abgelehnt (`lstat` plus `realpath`-Gegenprobe für Verknüpfungen mitten im Pfad).
+- Upload streamt in eine `.upload-<uuid>.tmp` im Zielverzeichnis und macht dann
+  `rename` – halbfertige Dateien tauchen nie im Listing auf. Namenskollision
+  zählt hoch (`bericht (1).pdf`), Punktdateien sind im Listing unsichtbar.
+- Der aktuelle Ordner steht im URL-Parameter `?path=`, nicht im React-State.
+- `/backend/*` ist bewusst vom Service Worker ausgenommen (kein
+  runtimeCaching-Eintrag) – sonst gehen Upload-Fortschritt und Range-Requests
+  kaputt.
+
 ## Feature-Aufbau
 - Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`
   mit Datenzugriff (z. B. db.js + Hooks) und den zugehörigen UI-Komponenten.
@@ -104,3 +126,13 @@ Nächster Schritt: Datei-Upload auf die SSD (Modul „Datenablage").
 - TanStack Query ist ausschließlich für Server-/Home-Assistant-Daten
   reserviert – NICHT für lokale IndexedDB-Daten.
 - Datensätze haben konsistente Zeitfelder: `id`, `createdAt`, `updatedAt`.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

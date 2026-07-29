@@ -11,6 +11,17 @@
 {
 	admin off
 	auto_https off
+
+	servers {
+		timeouts {
+			# Ohne Zeitlimit für den Request-Body: ein 5-GB-Upload über eine
+			# langsame Leitung darf beliebig lange dauern. Caddy hat hier
+			# ohnehin keine Vorgabe – das steht nur explizit da, damit es
+			# niemand später versehentlich "aufräumt".
+			read_body 0
+			write 0
+		}
+	}
 }
 
 :8080 {
@@ -50,7 +61,24 @@
 	# ein handle_path zum Zug käme. Gleiche Direktive = Reihenfolge wie notiert.
 	handle /backend/* {
 		uri strip_prefix /backend
-		reverse_proxy 127.0.0.1:3001
+
+		# Obergrenze für einen Upload. Muss zu MAX_UPLOAD_BYTES im Backend
+		# passen. Hinweis: der Multipart-Rahmen zählt mit, eine Datei ganz
+		# knapp unter 5 GB kann also hier abprallen statt mit der schöneren
+		# Meldung des Backends.
+		request_body {
+			max_size 5GB
+		}
+
+		reverse_proxy 127.0.0.1:3001 {
+			# Große Uploads und Downloads dürfen nicht mittendrin gekappt
+			# werden. 0 = kein Limit (ist auch der Standard, hier bewusst
+			# ausgeschrieben).
+			transport http {
+				read_timeout 0
+				write_timeout 0
+			}
+		}
 	}
 
 	# --- PWA ---------------------------------------------------------------

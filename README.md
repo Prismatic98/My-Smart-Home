@@ -87,6 +87,52 @@ verloren — das ist der bewusste Kompromiss gegenüber echtem Merging.
 `server/` hat eine eigene `package.json`. Endpunkte: `GET /health`,
 `GET /notes?since=<ms>`, `POST /notes/sync`.
 
+## Dateiablage
+
+Dateien liegen im Dateisystem unter `FILES_ROOT` – im Container `/data/files`,
+im Dev `server/data/files` (gitignored). Anders als die Notizen laufen sie
+**ohne** Offline-Layer: es gibt keine lokale Kopie und keinen Abgleich, der
+Browser sieht immer den echten Zustand des Pi. TanStack Query ist hier die
+einzige Datenschicht.
+
+Endpunkte unter `/backend/files`:
+
+| Methode | Pfad | Zweck |
+|---|---|---|
+| `GET` | `/list?path=/foo` | Inhalt eines Verzeichnisses |
+| `POST` | `/upload?path=/foo` | Multipart-Upload einer Datei |
+| `POST` | `/mkdir` | Ordner anlegen |
+| `PATCH` | `/rename` | Umbenennen |
+| `DELETE` | `/entry?path=…` | Löschen (Ordner rekursiv) |
+| `GET` | `/download?path=…` | Download, mit Range-Unterstützung |
+| `GET` | `/usage` | Belegter/freier Speicher |
+
+Jeder Pfad aus einem Request läuft durch `resolveSafePath()`
+([server/src/files/paths.js](./server/src/files/paths.js)) und wird per
+`path.relative` gegen die Wurzel geprüft — ein `startsWith` auf Zeichenketten
+würde `/data/files-alt` durchlassen. Symlinks werden abgelehnt, auch wenn sie
+mitten im Pfad stehen (dafür die `realpath`-Gegenprobe).
+
+Uploads streamen in eine `.upload-<uuid>.tmp` im Zielverzeichnis und werden
+erst per `rename` sichtbar. Halbfertige Dateien tauchen also nie im Listing
+auf, und bei Namensgleichheit wird hochgezählt (`bericht (1).pdf`) statt
+überschrieben.
+
+### Rechte auf dem Datenverzeichnis
+
+Der Backend-Container läuft als User `node` (uid 1000). Das gemountete
+Verzeichnis muss ihm gehören, sonst scheitert schon der Start mit einer
+Meldung im Log:
+
+```bash
+mkdir -p data/files
+sudo chown -R 1000:1000 data
+```
+
+Der Pfad kommt aus `FILES_DATA_DIR` in `.env.prod` (Standard `./data/files`).
+Soll die Ablage auf eine andere Platte, dort einen anderen Pfad eintragen und
+den ebenfalls auf uid 1000 setzen.
+
 ## Deployment auf dem Pi
 
 Zwei Container: **app** (Caddy mit der gebauten PWA) und **backend** (Fastify +
@@ -115,13 +161,15 @@ git clone <repo> ~/docker/my-smart-home && cd ~/docker/my-smart-home
 cp .env.prod.example .env.prod
 nano .env.prod        # VITE_HA_TOKEN eintragen, VITE_HA_URL leer lassen
 
-mkdir -p data         # Ablage der SQLite-Datei
+mkdir -p data/files   # SQLite-Datei und Dateiablage
 ```
 
 Das `mkdir` ist wichtig: der Backend-Container läuft als User `node` (uid 1000).
-Legt stattdessen Docker das Mount-Verzeichnis an, gehört es root und der Server
-kann die Datenbank nicht anlegen (`SQLITE_CANTOPEN`). Wer die Daten außerhalb
-des Repos haben will, setzt `BACKEND_DATA_DIR` in `.env.prod`.
+Legt stattdessen Docker die Mount-Verzeichnisse an, gehören sie root und der
+Server kann weder die Datenbank (`SQLITE_CANTOPEN`) noch Dateien anlegen. Gehört
+das Verzeichnis jemand anderem, hilft `sudo chown -R 1000:1000 data`. Wer die
+Daten außerhalb des Repos haben will, setzt `BACKEND_DATA_DIR` bzw.
+`FILES_DATA_DIR` in `.env.prod`.
 
 Bauen und starten (auch für jedes Update — `--build` ist Pflicht, weil der
 HA-Token zur Build-Zeit ins Bundle wandert):
@@ -137,6 +185,7 @@ Prüfen, dass alle drei Wege stehen:
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/                 # 200 = PWA
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/api/             # 401 = Home Assistant
 curl -s http://localhost:8080/backend/health                                    # {"status":"ok",…}
+curl -s http://localhost:8080/backend/files/usage                               # {"totalBytes":…}
 ```
 
 Compose löst `${...}` bei *jedem* Unterkommando auf, `--env-file .env.prod`
