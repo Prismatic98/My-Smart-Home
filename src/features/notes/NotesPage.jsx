@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Container, Group, Skeleton, SimpleGrid } from '@mantine/core';
-import { IconAlertTriangle, IconPlus } from '@tabler/icons-react';
+import { IconAlertTriangle, IconFileText } from '@tabler/icons-react';
 
 import ActionFab from '../../components/ActionFab/ActionFab.jsx';
 import DeleteNoteModal from './components/DeleteNoteModal.jsx';
@@ -113,7 +113,15 @@ export default function NotesPage() {
       />
 
       <ActionFab
-        actions={[{ key: 'new-note', label: 'Neue Notiz', icon: IconPlus, onClick: openCreate }]}
+        actions={[
+          {
+            key: 'new-note',
+            label: 'Neue Notiz',
+            icon: IconFileText,
+            color: 'yellow',
+            onClick: openCreate,
+          },
+        ]}
       />
     </Container>
   );

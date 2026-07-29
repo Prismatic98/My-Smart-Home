@@ -277,12 +277,16 @@ export default function FilesPage() {
             key: 'upload',
             label: 'Dateien hochladen',
             icon: IconUpload,
+            color: 'teal',
             onClick: openFilePicker,
           },
           {
             key: 'folder',
             label: 'Neuer Ordner',
             icon: IconFolderPlus,
+            // Blau wie „Übersicht" in der Navigation – Teal ist in diesem
+            // Modul schon die Farbe der Ablage selbst.
+            color: 'blue',
             onClick: () => setNewFolderOpen(true),
           },
         ]}

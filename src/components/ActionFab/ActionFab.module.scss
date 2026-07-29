@@ -1,6 +1,24 @@
 // Maße liegen hier, weil sich andere fixierte Elemente daran ausrichten
 // (z. B. das Upload-Panel der Dateiablage).
 
+// Legt sich über die gesamte Seite, sobald das Menü offen ist – inklusive
+// Kopfzeile und Navigation. Das ist zugleich die Klickfläche zum Schließen.
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 310;
+  background: rgba(0, 0, 0, 0.55);
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+
+  &[data-opened] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .wrapper {
   position: fixed;
   right: px-to-rem(24px);
@@ -25,6 +43,12 @@
   align-items: flex-end;
   gap: px-to-rem(12px);
   pointer-events: none;
+
+  // Schatten für das gesamte Menü, nicht nur für die Schrift: drop-shadow
+  // legt sich um jede sichtbare Form – Knopfkreise wie Buchstaben. Ein
+  // box-shadow zöge stattdessen ein Rechteck um den Container, also genau den
+  // Hintergrund, den es hier nicht geben soll.
+  filter: drop-shadow(0 px-to-rem(2px) px-to-rem(8px) rgba(0, 0, 0, 0.45));
 }
 
 .action {
@@ -51,15 +75,17 @@
 }
 
 .actionLabel {
-  // Kein Hintergrund – die Beschriftung steht frei über der Seite. Der
-  // Schatten hält sie auch über hellen Kacheln lesbar.
-  color: var(--mantine-color-text);
+  // Fest weiß statt --mantine-color-text: die Beschriftung steht immer auf
+  // der abgedunkelten Fläche, und im hellen Farbschema wäre schwarze Schrift
+  // darauf nicht zu lesen.
+  color: var(--mantine-color-white);
   white-space: nowrap;
-  text-shadow: 0 px-to-rem(1px) px-to-rem(3px) var(--mantine-color-body);
 }
 
 .actionButton {
-  box-shadow: var(--mantine-shadow-md);
+  // Die helle Variante ist von Haus aus leicht durchsichtig – über der
+  // Abdunklung würde sie dadurch trüb wirken.
+  backdrop-filter: blur(px-to-rem(2px));
 }
 
 .fab {
@@ -79,7 +105,8 @@
 // Wer Bewegung reduziert haben will, bekommt das Ein-/Ausblenden ohne Fahrt.
 @media (prefers-reduced-motion: reduce) {
   .action,
-  .fabIcon {
+  .fabIcon,
+  .scrim {
     transition-duration: 1ms;
   }
 }
