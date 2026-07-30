@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Alert,
   Badge,
@@ -10,26 +9,35 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
-import { IconAlertTriangle, IconBulbOff } from '@tabler/icons-react';
+import { IconBulbOff, IconLock } from '@tabler/icons-react';
 
-import { useEntitiesByDomain, useHomeAssistant } from '../../lib/HAProvider.jsx';
+import { useHomeAssistant } from '../../lib/HAProvider.jsx';
+import AreaSection from './components/AreaSection.jsx';
 import HaStatusAlert from './components/HaStatusAlert.jsx';
-import LightCard from './components/LightCard.jsx';
+import RateLimitHint from './components/RateLimitHint.jsx';
+import { useDevicesByArea } from './useDevices.js';
 
+/**
+ * Übersicht aller Geräte, gruppiert nach Bereich.
+ *
+ * Gezeigt wird das Geräte-Modell (deviceModel.js), nicht die Entitätenliste:
+ * Home Assistant meldet über 60 Lichtentitäten, weil jedes LED-Segment eine
+ * eigene ist. Nach Gerät gruppiert sind es acht Karten.
+ */
 export default function SmartHomePage() {
-  const { status, error, reconnect } = useHomeAssistant();
-  const lights = useEntitiesByDomain('light');
-  const [actionError, setActionError] = useState(null);
+  const { status, error, reconnect, devices, registryError } = useHomeAssistant();
+  const groups = useDevicesByArea();
 
-  const connecting = status === 'connecting';
   const usable = status === 'connected' || status === 'disconnected';
+  // Die Registries kommen als eigener Aufruf nach dem Verbindungsaufbau. Bis
+  // sie da sind, gibt es zwar Zustände, aber noch keine Gruppierung – das ist
+  // Laden, nicht „keine Geräte".
+  const loading = status === 'connecting' || (usable && devices.size === 0 && !registryError);
 
   return (
     <Container size="lg" px={0}>
-      {/* Bleibt als einziges Kopf-Element: der Verbindungszustand ist echte
-          Information, keine Beschreibung. HaStatusAlert meldet sich nur bei
-          Problemen, dieser Punkt zeigt auch den Normalfall. */}
-      <Group justify="flex-end" mb="sm">
+      <Group justify="flex-end" mb="sm" gap="xs">
+        <RateLimitHint />
         <Badge
           variant="dot"
           color={status === 'connected' ? 'teal' : 'gray'}
@@ -41,20 +49,23 @@ export default function SmartHomePage() {
 
       <HaStatusAlert status={status} error={error} onReconnect={reconnect} />
 
-      {actionError && (
+      {registryError && (
         <Alert
           variant="light"
-          color="red"
-          icon={<IconAlertTriangle size={18} />}
-          withCloseButton
-          onClose={() => setActionError(null)}
+          color="orange"
           mb="md"
+          icon={<IconLock size={18} />}
+          title="Geräteliste nicht abrufbar"
         >
-          {actionError}
+          <Text size="sm">
+            Die Verbindung steht, aber Home Assistant liefert die Geräte- und Bereichsliste
+            nicht aus. Das gelingt nur mit einem Token eines Administrator-Kontos – ohne die
+            Listen lassen sich Entitäten keinem Gerät zuordnen. Meldung: {registryError}
+          </Text>
         </Alert>
       )}
 
-      {connecting && (
+      {loading && (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
           {[0, 1, 2].map((index) => (
             <Skeleton key={index} height={180} radius="md" />
@@ -62,25 +73,26 @@ export default function SmartHomePage() {
         </SimpleGrid>
       )}
 
-      {usable && lights.length === 0 && (
+      {!loading && usable && groups.length === 0 && !registryError && (
         <Card withBorder radius="md" padding="xl">
           <Stack align="center" gap="sm">
             <IconBulbOff size={32} />
-            <Text fw={600}>Keine Lampen gefunden</Text>
-            <Text size="sm" c="dimmed" ta="center" maw={420}>
-              Home Assistant meldet keine Entitäten in der Domain „light“. Prüfe, ob die
-              Integrationen dort eingerichtet sind.
+            <Text fw={600}>Keine bedienbaren Geräte gefunden</Text>
+            <Text size="sm" c="dimmed" ta="center" maw={460}>
+              Home Assistant meldet keine Geräte mit Lampen, Schaltern oder Auswahlfeldern.
+              Geräte, die ausschließlich Diagnosewerte liefern, werden hier absichtlich nicht
+              gezeigt.
             </Text>
           </Stack>
         </Card>
       )}
 
-      {lights.length > 0 && (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-          {lights.map((entity) => (
-            <LightCard key={entity.entity_id} entity={entity} onError={setActionError} />
+      {groups.length > 0 && (
+        <Stack gap="xl">
+          {groups.map((group) => (
+            <AreaSection key={group.areaId ?? 'ohne-bereich'} group={group} />
           ))}
-        </SimpleGrid>
+        </Stack>
       )}
     </Container>
   );

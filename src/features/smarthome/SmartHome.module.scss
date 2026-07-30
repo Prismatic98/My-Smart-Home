@@ -1,0 +1,208 @@
+// Styles des Smart-Home-Moduls. Alles, was sich mit Mantine-Props ausdrücken
+// lässt, steht dort – hier nur, was Props nicht können: Farbverläufe aus
+// Live-Werten, der Segment-Streifen und die Kachel-Hervorhebung.
+
+/* ------------------------------------------------------------------ Karte */
+
+.deviceCard {
+  height: 100%;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+
+  // Eingeschaltete Geräte heben sich in ihrer eigenen Lichtfarbe ab.
+  // --device-color setzt DeviceCard.jsx aus dem Live-Zustand.
+  &[data-on] {
+    border-color: var(--device-color, var(--mantine-color-yellow-5));
+    box-shadow: 0 0 px-to-rem(18px) px-to-rem(-6px) var(--device-color, rgba(250, 176, 5, 0.5));
+  }
+
+  &[data-unavailable] {
+    opacity: 0.62;
+  }
+}
+
+// min-width: 0 ist nötig, damit lineClamp in einem Flex-Container greift.
+.clamp {
+  min-width: 0;
+  flex: 1;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--mantine-spacing-sm);
+}
+
+.cardFooter {
+  margin-top: auto;
+}
+
+/* ------------------------------------------------------- Bereichs-Kopfzeile */
+
+.areaHeader {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: px-to-rem(6px) 0;
+  // Ohne Hintergrund würden die Karten beim Scrollen durch die Kopfzeile
+  // hindurchscheinen.
+  background: var(--mantine-color-body);
+}
+
+/* ------------------------------------------------------------ Farbtemperatur */
+
+// Der Regler zeigt selbst, was er einstellt: warm links, kalt rechts.
+// Der Verlauf liegt als background-image auf dem ::before der Spur – so bleibt
+// die von Mantine gesetzte Hintergrundfarbe als Rückfallebene erhalten, falls
+// sich der interne Aufbau des Sliders einmal ändert.
+.tempSlider {
+  :global(.mantine-Slider-track)::before {
+    background-image: linear-gradient(to right, #ffb15e, #fff3e0, #f0f6ff, #cfe3ff);
+  }
+
+  // Der gefüllte Teil würde den Verlauf sonst bis zum Griff überdecken.
+  :global(.mantine-Slider-bar) {
+    background-color: transparent;
+  }
+}
+
+/* ---------------------------------------------------------- Segment-Streifen */
+
+// Ein Streifen aus Farbfeldern in Segmentreihenfolge – nicht 15 Kacheln
+// untereinander. Umbruch statt horizontalem Scrollen: auf dem Handy sind
+// 15 Felder in zwei Reihen besser zu treffen als in einer Schiene.
+.segmentStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: px-to-rem(6px);
+}
+
+.segment {
+  position: relative;
+  flex: 1 1 px-to-rem(34px);
+  min-width: px-to-rem(34px);
+  max-width: px-to-rem(72px);
+  height: px-to-rem(52px);
+  padding: 0;
+  border: px-to-rem(2px) solid transparent;
+  border-radius: var(--mantine-radius-sm);
+  background-color: var(--segment-color, var(--mantine-color-dark-4));
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(px-to-rem(-2px));
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &[data-selected] {
+    border-color: var(--mantine-color-blue-5);
+    box-shadow: 0 0 0 px-to-rem(2px) var(--mantine-color-blue-2);
+  }
+}
+
+// Die Nummer steht im Feld selbst. Zwei Schatten in Gegenrichtung, damit sie
+// auf hellen und dunklen Segmentfarben lesbar bleibt.
+.segmentIndex {
+  position: absolute;
+  inset-inline-start: px-to-rem(4px);
+  inset-block-end: px-to-rem(2px);
+  font-size: px-to-rem(10px);
+  font-weight: 700;
+  color: #fff;
+  text-shadow:
+    0 0 px-to-rem(3px) rgba(0, 0, 0, 0.9),
+    0 0 px-to-rem(1px) rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+
+/* -------------------------------------------------------------- Effekt-Picker */
+
+.pickerScroll {
+  position: relative;
+  overflow-y: auto;
+  // Feste Höhe: die virtualisierte Liste braucht einen messbaren Rahmen.
+  height: min(60vh, px-to-rem(460px));
+}
+
+// Vollbild-Variante auf dem Handy: der Rest des Dialogs ist Kopf und Suche.
+.pickerScrollFullScreen {
+  height: calc(100vh - px-to-rem(210px));
+}
+
+.pickerRows {
+  position: relative;
+  width: 100%;
+}
+
+// Jede virtualisierte Zeile wird absolut positioniert – der Container hält
+// die Gesamthöhe, damit die Scrollleiste stimmt.
+.pickerRow {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+}
+
+.pickerGrid {
+  display: grid;
+  gap: px-to-rem(8px);
+  padding-inline-end: px-to-rem(4px);
+}
+
+.effectTile {
+  display: flex;
+  align-items: center;
+  gap: px-to-rem(6px);
+  height: 100%;
+  padding: px-to-rem(8px) px-to-rem(10px);
+  text-align: start;
+  border: px-to-rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+
+  &:hover {
+    border-color: var(--mantine-color-blue-4);
+    background: light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-5));
+  }
+
+  &[data-active] {
+    border-color: var(--mantine-color-blue-5);
+    background: light-dark(var(--mantine-color-blue-0), var(--mantine-color-blue-9));
+  }
+}
+
+.effectName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.25;
+}
+
+// Der Anheft-Knopf ist auf dem Handy immer sichtbar (es gibt keinen Hover),
+// auf dem Rechner erst beim Überfahren oder wenn er gesetzt ist.
+.pinButton {
+  flex: 0 0 auto;
+  opacity: 1;
+
+  @media (hover: hover) {
+    opacity: 0;
+
+    .effectTile:hover &,
+    &[data-pinned],
+    &:focus-visible {
+      opacity: 1;
+    }
+  }
+}

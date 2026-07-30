@@ -26,6 +26,8 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
   Datei-Uploads via multipart auf die SSD.
 - Auth: einfacher Login vor die App (die App ist über Tailscale privat erreichbar).
 - Styling/UI: Mantine (kein Tailwind), eigene Styles als SCSS-Module (.module.scss).
+- Virtualisierung langer Listen: `@tanstack/react-virtual` (Effekt-Picker mit
+  bis zu 243 Einträgen).
 
 ## Deployment-Umgebung
 > Vollständige Bestandsaufnahme des Pi: `docs/pi-infrastruktur.md`
@@ -51,7 +53,11 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
   die Werte gehen als Build-Args in den Vite-Build.
 
 ## Stand der Geräte-Integration
-- Govee-Lampen: über "Govee Lights Local" (lokal) eingebunden, benannt, steuerbar.
+- Govee-Lampen: jetzt über die Govee-Cloud-Integration (HACS) eingebunden.
+  Damit stehen zusätzlich Szenen, DIY-Effekte, Snapshots, Musikmodi,
+  Zonen-Switches und Segmentsteuerung zur Verfügung. Acht Geräte, 61
+  Lichtentitäten (jedes Segment ist eine eigene), 18 Selects, 16 Switches.
+  Die App bildet das capability-getrieben ab – siehe eigenen Abschnitt.
 - HACS: Dateien liegen seit 30.07.2026 unter
   `~/docker/homeassistant/custom_components/hacs/` (Version 2.0.5), HA erkennt
   sie. Die Einrichtung über die Weboberfläche (GitHub-Gerätecode) macht Dennis
@@ -90,8 +96,11 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
 Infrastruktur steht (Pi, Docker, Home Assistant, Tailscale, Govee-Lampen).
 PWA-Grundgerüst, Notizen (Dexie) und Smart-Home-Anbindung laufen.
 Backend (Fastify + SQLite) mit Notizen-Sync steht, Deployment über Caddy.
-Dateiablage (Upload, Dateibrowser, Download) läuft.
-Offen: Vorschau, Thumbnails, Papierkorb, Google-Drive-Sync – bewusst später.
+Dateiablage (Upload, Dateibrowser, Download, Vorschau, Teilen) läuft.
+Smart Home ist auf die capability-getriebene Architektur umgebaut: Übersicht
+nach Bereich, Detailseite pro Gerät, Effekt-Picker, Segment-Editor.
+Offen: Thumbnails, Papierkorb, Google-Drive-Sync, Automationen-Ansicht,
+Sensoren-Dashboard – bewusst später.
 
 ## Backend
 - Liegt in `server/` mit eigener package.json (Node + Fastify + better-sqlite3).
@@ -216,6 +225,86 @@ Offen: Vorschau, Thumbnails, Papierkorb, Google-Drive-Sync – bewusst später.
   gemerkt. Hochgeladen wird über die normale Upload-Warteschlange.
 - Testbar nur im echten Build über HTTPS und nur installiert – im Dev-Server
   gibt es keinen Service Worker.
+
+## Smart Home: capability-getriebene Architektur
+> Manuelle Testanleitung für die Grenzfälle: `docs/smarthome-testanleitung.md`
+
+- **Grundregel, gilt ausnahmslos:** *Entität hat Fähigkeit X → rendere Control
+  für X.* Keine Komponente trägt einen Herstellernamen, und nirgends wird nach
+  Marke, Modell oder Gerätename verzweigt. Nur so erscheint ein künftiges Gerät
+  (Matter-Lampe, Zigbee-Sensor, Thermostat) automatisch sinnvoll, ohne dass
+  Code angefasst werden muss.
+- Zugeordnet wird ausschließlich über `supported_color_modes`,
+  `supported_features`, `effect_list`, die Domain, `entity_category` und – wo
+  Attribute nicht ausreichen – das **Suffix der entity_id**
+  (`_scene`, `_diy_scene`, `_snapshot`, `_music_mode`). Unbekannte Suffixe
+  werden nicht verworfen, sondern generisch als Select gerendert.
+  Achtung Reihenfolge: `_diy_scene` endet ebenfalls auf `_scene`, spezifische
+  Suffixe müssen zuerst geprüft werden (`SELECT_KINDS` in capabilities.js).
+- **Registries im HAProvider:** `subscribeEntities` allein genügt nicht. Der
+  Provider lädt zusätzlich `config/device_registry/list`,
+  `config/entity_registry/list` und `config/area_registry/list` und stellt sie
+  als Maps bereit (`devices`, `entityRegistry`, `areas`). Aktualisiert wird über
+  die Events `device_registry_updated`, `entity_registry_updated`,
+  `area_registry_updated` – kein Polling. Nach einem Reconnect werden sie im
+  `ready`-Handler neu geholt. Die Listen liefert Home Assistant nur an Tokens
+  eines Administrator-Kontos; scheitert es, steht der Grund in `registryError`.
+- **Gruppierung nach Gerät, nicht nach Entität.** Home Assistant meldet über 60
+  Entitäten in der Domain `light`, weil jedes LED-Segment eine eigene ist. Nach
+  Entität gruppiert wären das 60 Kacheln für acht Geräte. `deviceModel.js`
+  gruppiert nach `device_id`; die UI konsumiert nur dieses Modell und sieht nie
+  eine rohe Entitätenliste.
+- `deviceModel.js` ist absichtlich **frei von React** (Hooks liegen in
+  `useDevices.js`). Dadurch lässt sich die Gruppierung gegen einen
+  Registry-Abzug in Node prüfen, ohne Browser.
+- **Haupt- vs. Segment-Lichtentität** entscheiden Attribute, nicht Namen: die
+  Haupt-Entität hat `supported_features > 0` bzw. `color_temp`, Segmente melden
+  `supported_features: 0` und nur `rgb`. Der Name (`… Segment N`) dient
+  ausschließlich als Rückfallebene für die Sortierreihenfolge. Eine Entität
+  gilt nur dann als Segment, wenn das Gerät zusätzlich eine stärkere
+  Haupt-Entität hat – eine einfache RGB-Lampe sieht sonst genauso aus.
+- Geräte ohne bedienbare Entität (Sun, Backup, HACS, Wetter, TTS) erscheinen
+  nicht. Entitäten mit `entity_category` `diagnostic`/`config` sowie
+  `hidden_by`/`disabled_by` gehören nicht in die Hauptansicht – Diagnose steht
+  zusammengeklappt am Ende der Detailseite. Der Filter ist nicht kosmetisch: die
+  Integration liefert auf jedem Gerät ein deaktiviertes `select.*_diy_style`
+  ohne Zustand mit.
+- Segmente haben **kein** An/Aus und **keine** Helligkeit – auch wenn Home
+  Assistant die Entität nominell mit Power-State ausliefert. Dafür werden keine
+  Controls gerendert.
+- **Rate Limit (wichtig):** Die Govee-Cloud erlaubt 100 Anfragen pro Minute.
+  Lesen ist kostenlos – alle Zustände kommen über den WebSocket-Push. Aber jede
+  Aktion kostet. Deshalb laufen **alle** Schreibzugriffe über `services.js`:
+  Regler (Helligkeit, Farbe, Farbtemperatur, number) sind auf 400 ms gedrosselt
+  (trailing) und senden beim Loslassen final; der Segment-Farbwähler sendet erst
+  auf Knopfdruck, nie während des Ziehens; Reihen (15 Segmente, „alle an/aus"
+  eines Bereichs) laufen sequenziell mit Abstand und sichtbarem Fortschritt.
+  Nie eine Schleife aus gleichzeitigen Service-Calls.
+- Der Rest-Wert wird über das Suffix `_api_rate_limit_remaining` gefunden (keine
+  feste entity_id) und nur unterhalb von 20 dezent eingeblendet.
+- **Effekte anwenden:** Szenen aus `effect_list` über `light.turn_on` mit
+  `effect` – das schaltet die Lampe gleich mit ein. DIY, Snapshot und
+  Musikmodus über `select.select_option`; die stehen **nicht** in `effect_list`.
+  Effekt beenden = Option `"None"` am Scene-Select, gerendert als eigener Knopf
+  „Effekt beenden", nie als Listeneintrag.
+- **Am Gerät nachgemessen (30.07.2026), Anzeige des aktiven Effekts:**
+  `light.turn_on` mit `effect` füllt `light.attributes.effect` korrekt. Eine
+  DIY-Szene über das Select lässt `effect` dagegen auf `null` und setzt
+  `select.*_scene` auf "None" – dort ist allein das DIY-Select die
+  Anzeigequelle. Ein Snapshot behält seinen Select-Wert für immer und gilt
+  deshalb **nie** als „aktiver Effekt" (er ist eine einmalige Aktion). Der
+  Musikmodus ist eine Einstellung, kein laufender Effekt. Diese Logik steht in
+  `activeEffect()` in deviceModel.js.
+- Der Effekt-Picker ist ein eigener Dialog mit Tabs, Suche und
+  **virtualisiertem Raster** (`@tanstack/react-virtual`): das Pixel Light hat
+  243 Szenen, ein Mantine-`Select` ist dort unbrauchbar. Favoriten und „zuletzt
+  verwendet" liegen pro Gerät in Dexie (`smart-home-smarthome`) – reine
+  Client-Vorlieben, kein Backend, kein Sync.
+- Detailansicht als eigene Route `/smart-home/:deviceId` (nicht als
+  Modal-State), damit Zurück-Taste und Deep-Links funktionieren – dieselbe
+  Entscheidung wie bei der Dateivorschau.
+- Nicht erreichbare Entitäten werden markiert und ihre Controls **gesperrt,
+  nicht versteckt**: verschwindende Knöpfe sehen wie ein Fehler der App aus.
 
 ## Feature-Aufbau
 - Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`
