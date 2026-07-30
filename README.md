@@ -140,6 +140,50 @@ erst per `rename` sichtbar. Halbfertige Dateien tauchen also nie im Listing
 auf, und bei Namensgleichheit wird hochgezählt (`bericht (1).pdf`) statt
 überschrieben.
 
+### Teilen aus anderen Apps (Web Share Target)
+
+Die installierte App erscheint im Teilen-Menü des Systems. Ein gescanntes
+Dokument aus der Kamera-App geht damit direkt in die Ablage, inklusive Auswahl
+des Zielordners.
+
+Voraussetzungen und Grenzen:
+
+- **Android/Chromium** und die App muss **installiert** sein (Zum Startbildschirm
+  hinzufügen). Im normalen Browser-Tab taucht sie im Teilen-Menü nicht auf.
+- **iOS/Safari** kennt Web Share Targets nicht — dort bleibt der Weg über den
+  Hochladen-Knopf.
+- Angemeldet ist nur `files` (keine Texte, keine Links): die Ablage kann mit
+  einem geteilten Link nichts anfangen.
+
+Der Weg der Daten:
+
+1. Das System schickt einen `POST multipart/form-data` an `/share-target`
+   (aus `share_target.action` im Manifest, siehe `vite.config.js`).
+2. Ein POST erreicht das JavaScript einer SPA nie. Deshalb fängt ihn der
+   Service Worker ab ([public/share-target-sw.js](./public/share-target-sw.js)),
+   legt die Dateien in den Cache `share-inbox-v1` und antwortet mit einer
+   303-Weiterleitung auf `/files?share=pending`.
+3. Die geladene Seite holt sie dort ab und leert den Briefkasten dabei
+   ([src/features/files/shareTarget.js](./src/features/files/shareTarget.js)).
+4. Der Dialog zeigt die Dateien mit Vorschau, fragt den Zielordner (gemerkt vom
+   letzten Mal) und übergibt an die normale Upload-Warteschlange.
+
+Das Skript des Service Workers liegt in `public/`, weil es unter einem festen
+Namen ausgeliefert werden muss; es wird per `workbox.importScripts` in den
+generierten Worker gezogen. Ein eigener `fetch`-Listener ist der einzige Weg an
+einen POST — `generateSW` selbst kennt nur GET-Routen.
+
+**Testen** geht nur im echten Build, nicht im Dev-Server (dort ist der Service
+Worker über `devOptions.enabled: false` abgeschaltet):
+
+```bash
+npm run build && npm run preview
+```
+
+Dann über Tailscale (HTTPS!) auf dem Handy öffnen, installieren und aus einer
+beliebigen App etwas teilen. Ohne HTTPS gibt es keinen Service Worker und damit
+kein Share Target.
+
 ### Rechte auf dem Datenverzeichnis
 
 Der Backend-Container läuft als User `node` (uid 1000). Das gemountete

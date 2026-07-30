@@ -16,6 +16,7 @@ import MoveModal from './components/MoveModal.jsx';
 import NewFolderModal from './components/NewFolderModal.jsx';
 import RenameModal from './components/RenameModal.jsx';
 import SelectionBar from './components/SelectionBar.jsx';
+import ShareImportModal from './components/ShareImportModal.jsx';
 import StorageFooter from './components/StorageFooter.jsx';
 import UploadDropzone from './components/UploadDropzone.jsx';
 import UploadPanel from './components/UploadPanel.jsx';
@@ -28,6 +29,7 @@ import {
   useRenameEntry,
   useStorageUsage,
 } from './useFiles.js';
+import { useSharedFiles } from './useSharedFiles.js';
 import { useUploadQueue } from './useUploadQueue.js';
 import classes from './Files.module.scss';
 
@@ -41,6 +43,10 @@ import classes from './Files.module.scss';
  * Alle Daten kommen von TanStack Query direkt vom Pi – hier gibt es bewusst
  * keinen Offline-Layer wie bei den Notizen. Was der Browser zeigt, ist der
  * echte Zustand des Dateisystems.
+ *
+ * Zweiter Eingang neben Knopf und Dropzone: das Teilen-Menü des Systems. Die
+ * Dateien liegen dann schon bereit, wenn diese Seite lädt – siehe
+ * useSharedFiles.js.
  */
 export default function FilesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -68,6 +74,9 @@ export default function FilesPage() {
   const uploads = useUploadQueue({
     onFileUploaded: (result) => invalidateAfterUpload(result.targetPath),
   });
+
+  // Dateien, die über das Teilen-Menü des Systems hereinkommen.
+  const shared = useSharedFiles();
 
   const navigate = useCallback(
     (next) => {
@@ -338,6 +347,17 @@ export default function FilesPage() {
           } catch {
             // Meldung steht im Modal.
           }
+        }}
+      />
+
+      <ShareImportModal
+        files={shared.files}
+        onClose={shared.clear}
+        onSubmit={(targetPath) => {
+          uploads.enqueue(shared.files, targetPath);
+          shared.clear();
+          // In den Zielordner wechseln: dort sieht man die Dateien ankommen.
+          if (targetPath !== path) navigate(targetPath);
         }}
       />
 

@@ -140,6 +140,30 @@ Offen: Vorschau, Thumbnails, Papierkorb, Google-Drive-Sync – bewusst später.
   runtimeCaching-Eintrag) – sonst gehen Upload-Fortschritt und Range-Requests
   kaputt.
 
+## Teilen aus anderen Apps (Web Share Target)
+- Zweiter Eingang in die Ablage: die installierte App steht im Teilen-Menü des
+  Systems (Android/Chromium; iOS kennt Share Targets nicht).
+- Im Manifest ist bewusst nur `files` angemeldet, kein `text`/`url` – sonst
+  würde die App bei jedem geteilten Link angeboten.
+- Der POST auf `/share-target` erreicht das JavaScript der Seite nie. Deshalb
+  fängt ihn ein eigener fetch-Listener im Service Worker ab
+  (`public/share-target-sw.js`), legt die Dateien in den Cache `share-inbox-v1`
+  und leitet per 303 auf `/files?share=pending` um. Cache Storage statt
+  IndexedDB, weil ein Response Blob, MIME-Typ und Name schon mitbringt.
+- Das Skript liegt in `public/` (fester Name, kein Hash) und kommt über
+  `workbox.importScripts` in den generierten Worker. Es darf nichts aus `src/`
+  importieren – Cache-Name und Kopfzeilen stehen deshalb doppelt, in
+  `public/share-target-sw.js` und `src/features/files/shareTarget.js`.
+- Abholen leert den Briefkasten (`takeSharedFiles`) und ist auf Modulebene
+  gemerkt: sonst würde der zweite Effektlauf im StrictMode die Dateien mit
+  einer leeren Liste überschreiben. Der Marker `?share=` fliegt sofort aus der
+  URL, damit ein Neuladen den Dialog nicht wiederholt.
+- Der Zielordner wird vor dem Upload gewählt (Ordner-Browser wie beim
+  Verschieben, gemeinsame Komponente `FolderPicker`) und in localStorage
+  gemerkt. Hochgeladen wird über die normale Upload-Warteschlange.
+- Testbar nur im echten Build über HTTPS und nur installiert – im Dev-Server
+  gibt es keinen Service Worker.
+
 ## Feature-Aufbau
 - Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`
   mit Datenzugriff (z. B. db.js + Hooks) und den zugehörigen UI-Komponenten.

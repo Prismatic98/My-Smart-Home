@@ -27,11 +27,44 @@ export default defineConfig({
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: 'maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+
+        // Die App erscheint im Teilen-Menü des Systems (Android/Chromium; iOS
+        // kennt Share Targets nicht). Der POST landet im Service Worker –
+        // siehe public/share-target-sw.js.
+        //
+        // Bewusst NUR `files`: würde hier auch `text` oder `url` stehen, würde
+        // die App bei jedem geteilten Link und jedem Textschnipsel angeboten,
+        // obwohl die Dateiablage damit nichts anfangen kann.
+        share_target: {
+          action: '/share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            files: [
+              {
+                name: 'files',
+                // Die groben Kategorien zuerst, damit Kamera- und Scan-Apps
+                // die App sicher anbieten; `*/*` fängt den Rest.
+                accept: ['image/*', 'video/*', 'audio/*', 'text/*', 'application/pdf', '*/*'],
+              },
+            ],
+          },
+        },
       },
       workbox: {
         // Nur die eigenen Build-Artefakte vorhalten. Backend-Antworten haben
         // im Precache nichts verloren.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+
+        // Der Share-Target-Handler wird in den generierten Worker
+        // hineingezogen. Ein eigener fetch-Listener ist der einzige Weg, an
+        // einen POST aus dem Teilen-Menü zu kommen – generateSW selbst kann
+        // nur GET-Routen.
+        importScripts: ['/share-target-sw.js'],
+
+        // …und gehört deshalb nicht zusätzlich in den Precache. Er kommt über
+        // importScripts, nicht über eine Route.
+        globIgnores: ['**/node_modules/**/*', 'share-target-sw.js'],
 
         // SPA: unbekannte Routen aus dem Cache mit index.html beantworten
         navigateFallback: 'index.html',
