@@ -1,11 +1,55 @@
+import { cp } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 
+/**
+ * Standardschriften von pdf.js unter /pdfjs/standard_fonts/ verfügbar machen.
+ *
+ * PDFs müssen Helvetica, Times & Co. nicht mitliefern – jeder Betrachter hat
+ * sie zu haben. pdf.js bringt sie deshalb als eigene Dateien mit; fehlen sie,
+ * bleiben Rechnungen und Formulare stellenweise leer. Bei gescannten
+ * Dokumenten (Bild im PDF) fällt das nicht auf, bei erzeugten sofort.
+ *
+ * Warum ein eigenes Plugin und nicht public/: 800 KB Schriftbinärdateien
+ * gehören nicht ins Repo, und ein npm-Skript wäre unsichtbarer als diese
+ * zwanzig Zeilen. Im Dev liefert die Middleware sie direkt aus node_modules,
+ * im Build werden sie einmal nach dist kopiert.
+ */
+function pdfjsStandardFonts() {
+  const source = fileURLToPath(new URL('./node_modules/pdfjs-dist/standard_fonts', import.meta.url));
+  const publicPath = '/pdfjs/standard_fonts/';
+
+  return {
+    name: 'pdfjs-standard-fonts',
+
+    configureServer(server) {
+      server.middlewares.use(publicPath, (request, response, next) => {
+        // Nur Dateinamen zulassen: der Pfad kommt aus einem Request und darf
+        // das Schriftverzeichnis nicht verlassen.
+        const name = path.basename(decodeURIComponent(request.url ?? '').split('?')[0]);
+        if (!name) return next();
+
+        const stream = createReadStream(path.join(source, name));
+        stream.on('error', next);
+        stream.pipe(response);
+      });
+    },
+
+    async writeBundle(options) {
+      const target = path.join(options.dir ?? 'dist', 'pdfjs', 'standard_fonts');
+      await cp(source, target, { recursive: true });
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     react(),
+    pdfjsStandardFonts(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon-180x180.png'],
@@ -64,7 +108,13 @@ export default defineConfig({
 
         // …und gehört deshalb nicht zusätzlich in den Precache. Er kommt über
         // importScripts, nicht über eine Route.
-        globIgnores: ['**/node_modules/**/*', 'share-target-sw.js'],
+        //
+        // Der PDF-Renderer bleibt ebenfalls draußen: 430 KB, die jede
+        // Installation vorab laden würde, obwohl eine Vorschau ohne Verbindung
+        // zum Pi gar nicht möglich ist – die Datei selbst liegt dort. Der
+        // Worker (pdf.worker.min.*.mjs) fällt schon durch globPatterns, weil
+        // dort nur .js steht.
+        globIgnores: ['**/node_modules/**/*', 'share-target-sw.js', 'assets/PdfPreview-*.js'],
 
         // SPA: unbekannte Routen aus dem Cache mit index.html beantworten
         navigateFallback: 'index.html',

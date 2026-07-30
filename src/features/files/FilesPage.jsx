@@ -10,6 +10,7 @@ import { joinPath, triggerDownload } from './api.js';
 import DeleteConfirmModal from './components/DeleteConfirmModal.jsx';
 import EmptyState from './components/EmptyState.jsx';
 import FileGrid from './components/FileGrid.jsx';
+import FilePreviewModal from './components/FilePreviewModal.jsx';
 import FileTable from './components/FileTable.jsx';
 import FilesToolbar from './components/FilesToolbar.jsx';
 import MoveModal from './components/MoveModal.jsx';
@@ -80,10 +81,44 @@ export default function FilesPage() {
 
   const navigate = useCallback(
     (next) => {
+      // Setzt alle Parameter neu – eine offene Vorschau gehört nicht in den
+      // nächsten Ordner.
       setSearchParams(next === '/' ? {} : { path: next });
     },
     [setSearchParams]
   );
+
+  /**
+   * Die offene Vorschau steht als `?preview=<name>` in der URL, nicht im State.
+   *
+   * Grund ist die Zurück-Taste: auf Android ist das die Gebärde, mit der man ein
+   * Fenster schließt. Öffnen legt deshalb einen History-Eintrag an (push),
+   * Schließen ersetzt ihn (replace) – Zurück schließt damit die Vorschau statt
+   * die Ablage zu verlassen. Als Nebeneffekt ist eine Vorschau verlinkbar.
+   */
+  const previewName = searchParams.get('preview');
+
+  const openPreview = useCallback(
+    (name) => {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        next.set('preview', name);
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
+
+  const closePreview = useCallback(() => {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('preview');
+        return next;
+      },
+      { replace: true }
+    );
+  }, [setSearchParams]);
 
   // Ordnerwechsel hebt die Auswahl auf – sie bezieht sich immer auf genau
   // einen Ordner, sonst würde man versehentlich anderswo löschen.
@@ -117,24 +152,67 @@ export default function FilesPage() {
   );
 
   /**
-   * Ein Klick genügt: Ordner werden betreten, Dateien nur markiert.
+   * Ein Klick genügt: Ordner werden betreten, Dateien geöffnet.
    *
-   * Herunterladen liegt bewusst im Kontextmenü. Ein Klick, der ungefragt
-   * einen Download auslöst, ist beim Durchsehen eines Ordners lästiger als
-   * ein Menüeintrag mehr.
+   * Markieren läuft über die Checkbox, nicht über den Klick – ein Klick kann
+   * nicht beides bedeuten, und „ansehen" will man viel häufiger als „auswählen".
+   * Herunterladen bleibt im Kontextmenü und in der Vorschau: ein Klick, der
+   * ungefragt eine Datei aufs Gerät zieht, wäre beim Durchsehen lästig.
    */
   const activate = useCallback(
     (entry) => {
       if (entry.type === 'dir') navigate(joinPath(path, entry.name));
-      else toggle(entry.name);
+      else openPreview(entry.name);
     },
-    [navigate, path, toggle]
+    [navigate, path, openPreview]
   );
 
   const download = useCallback(
     (entry) => triggerDownload(joinPath(path, entry.name), entry.name),
     [path]
   );
+
+  /**
+   * Der vorgeschaute Eintrag kommt aus der ungefilterten Serverliste: tippt man
+   * mit offener Vorschau etwas in die Suche, soll sie nicht zuklappen.
+   * Geblättert wird dagegen durch die sichtbare Reihenfolge – was man sieht,
+   * ist die Strecke.
+   */
+  const previewEntry = useMemo(() => {
+    if (!previewName) return null;
+    const all = directory.data?.entries ?? [];
+    return all.find((entry) => entry.name === previewName && entry.type === 'file') ?? null;
+  }, [previewName, directory.data]);
+
+  const previewFiles = useMemo(() => entries.filter((entry) => entry.type === 'file'), [entries]);
+  const previewIndex = previewFiles.findIndex((entry) => entry.name === previewName);
+
+  const navigatePreview = useCallback(
+    (offset) => {
+      const target = previewIndex < 0 ? null : previewFiles[previewIndex + offset];
+      if (!target) return;
+
+      // Blättern ersetzt den History-Eintrag. Sonst müsste man sich durch
+      // zwanzig Bilder zurücktippen, um die Ablage wieder zu verlassen.
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.set('preview', target.name);
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [previewFiles, previewIndex, setSearchParams]
+  );
+
+  // Ist die Datei weg – gelöscht, umbenannt, von einem anderen Gerät aus –,
+  // soll kein leeres Fenster stehen bleiben. Erst nach dem Laden prüfen:
+  // vorher ist die Liste leer oder noch die des vorigen Ordners.
+  useEffect(() => {
+    if (!previewName || !directory.isSuccess || directory.isFetching) return;
+    if (!previewEntry) closePreview();
+  }, [previewName, previewEntry, directory.isSuccess, directory.isFetching, closePreview]);
 
   const startUpload = useCallback(
     (files) => {
@@ -348,6 +426,19 @@ export default function FilesPage() {
             // Meldung steht im Modal.
           }
         }}
+      />
+
+      <FilePreviewModal
+        entry={previewEntry}
+        path={path}
+        hasPrev={previewIndex > 0}
+        hasNext={previewIndex >= 0 && previewIndex < previewFiles.length - 1}
+        onNavigate={navigatePreview}
+        onClose={closePreview}
+        onDownload={download}
+        onRename={setRenameTarget}
+        onMove={(entry) => setMoveTargets([entry])}
+        onDelete={(entry) => setDeleteTargets([entry])}
       />
 
       <ShareImportModal

@@ -28,12 +28,21 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
 - Styling/UI: Mantine (kein Tailwind), eigene Styles als SCSS-Module (.module.scss).
 
 ## Deployment-Umgebung
-- Raspberry Pi 5 (8 GB), NVMe-SSD, Raspberry Pi OS Lite (64-bit).
-- Alles läuft als Docker-Container über eine docker-compose.yml unter ~/docker.
-- Home Assistant: Container mit network_mode: host, Config unter ~/docker/homeassistant.
-- Fernzugriff + HTTPS über Tailscale (tailscale serve).
-  SSH über Tailscale SSH. MagicDNS-Name des Pi: `smarthome`, User: `dennis`.
-- App und Backend kommen als weitere Container in dieselbe docker-compose.yml.
+> Vollständige Bestandsaufnahme des Pi: `docs/pi-infrastruktur.md`
+> (Hardware, Ports, Netzwerk, Tailscale, Dienste, bekannte Lücken).
+
+- Raspberry Pi 5 (8 GB), NVMe-SSD, Raspberry Pi OS Lite (64-bit, Debian 13).
+- Alles läuft als Docker-Container, verteilt auf ZWEI Compose-Dateien:
+  - `~/docker/docker-compose.yml` — nur Home Assistant (network_mode: host),
+    Config unter `~/docker/homeassistant` (direkt, kein Unterordner `config`).
+  - `~/docker/my-smart-home/docker-compose.prod.yml` — App + Backend.
+  Weitere Compose-Dateien gibt es auf dem Pi nicht.
+- Fernzugriff + HTTPS über Tailscale (`tailscale serve` → nur die App auf :8080).
+  MagicDNS-Name des Pi: `smarthome`, User: `dennis`.
+- Achtung Namensauflösung: `smarthome` löst im Heimnetz über die Fritzbox ins
+  LAN auf (eth0 .52 und wlan0 .51 sind beide aktiv). Ein `ssh dennis@smarthome`
+  von dort läuft über den normalen sshd, NICHT über Tailscale SSH — es braucht
+  also einen Key, und `sudo` scheitert still (kein TTY).
 - Die App läuft als eigener Container (Dockerfile + docker-compose.prod.yml im Repo):
   Caddy liefert das gebaute `dist` auf Port 8080 aus und reicht `/api/*` per
   reverse_proxy an Home Assistant (127.0.0.1:8123) weiter — deshalb
@@ -43,6 +52,10 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
 
 ## Stand der Geräte-Integration
 - Govee-Lampen: über "Govee Lights Local" (lokal) eingebunden, benannt, steuerbar.
+- HACS: Dateien liegen seit 30.07.2026 unter
+  `~/docker/homeassistant/custom_components/hacs/` (Version 2.0.5), HA erkennt
+  sie. Die Einrichtung über die Weboberfläche (GitHub-Gerätecode) macht Dennis
+  selbst — das ist von GitHub bewusst nicht automatisierbar.
 - Govee-Szenen/Pixel Light: offen, später über Govee-Cloud (HACS + API-Key).
 - SmartThings/Samsung-Waschmaschine: zurückgestellt.
 - Narwal Freo X Ultra (Saugroboter): keine saubere HA-Anbindung, zurückgestellt.
@@ -59,9 +72,19 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
   später serverseitig über das eigene Backend proxyen.
 
 ## Betriebshinweise (nicht anfassen)
-- Kernel-Parameter `nvme_core.default_ps_max_latency_us=0` in /boot/firmware/cmdline.txt
-  MUSS aktiv bleiben — verhindert NVMe-I/O-Fehler (APST). Nicht entfernen.
+- DREI Kernel-Parameter in /boot/firmware/cmdline.txt MÜSSEN aktiv bleiben —
+  alle drei zielen auf dasselbe Problem (Stromsparzustände von NVMe/PCIe
+  verursachen auf dem Pi 5 I/O-Fehler). Keinen davon entfernen:
+  `nvme_core.default_ps_max_latency_us=0` (APST),
+  `pcie_aspm=off`, `pcie_port_pm=off`.
 - Pi immer sauber herunterfahren (`sudo poweroff` oder kurzer Power-Knopf-Druck).
+- Home Assistant neu starten mit `docker compose stop -t 60 homeassistant` +
+  `start`, NICHT mit `down`: sonst meldet der Recorder beim nächsten Start
+  "could not validate that the sqlite3 database was shutdown cleanly".
+- HA-Logs immer mit `--since "$(docker inspect homeassistant --format
+  '{{.State.StartedAt}}')"` lesen — `docker logs` wirft sonst alle Läufe
+  desselben Containers zusammen und alte Warnungen sehen aus wie neue.
+  Zum Filtern des Bluetooth-Dauerfehlers: `| grep -v habluetooth`.
 
 ## Aktueller Stand
 Infrastruktur steht (Pi, Docker, Home Assistant, Tailscale, Govee-Lampen).
@@ -136,9 +159,39 @@ Offen: Vorschau, Thumbnails, Papierkorb, Google-Drive-Sync – bewusst später.
   `rename` – halbfertige Dateien tauchen nie im Listing auf. Namenskollision
   zählt hoch (`bericht (1).pdf`), Punktdateien sind im Listing unsichtbar.
 - Der aktuelle Ordner steht im URL-Parameter `?path=`, nicht im React-State.
+- Ein Klick auf eine Datei öffnet die Vorschau, ein Klick auf einen Ordner
+  betritt ihn. Markiert wird ausschließlich über die Checkbox – ein Klick kann
+  nicht beides bedeuten.
 - `/backend/*` ist bewusst vom Service Worker ausgenommen (kein
   runtimeCaching-Eintrag) – sonst gehen Upload-Fortschritt und Range-Requests
   kaputt.
+
+## Dateivorschau
+- Vorschau nur, wenn der Browser den Inhalt selbst darstellen kann (Bild, Video,
+  Audio, Text) oder wir einen Renderer mitbringen (PDF über pdf.js). Office,
+  Archive und Binärdateien bekommen bewusst keine halbgare Vorschau, sondern
+  Metadaten und Download – alles andere bräuchte einen Konverter auf dem Pi.
+  Die Regeln stehen in `lib/previewKind.js`, nicht in den Komponenten.
+- PDF läuft über pdf.js und NICHT über `<iframe>`: Chrome auf Android hat keinen
+  PDF-Betrachter für eingebettete Rahmen, dort bliebe die Vorschau leer – genau
+  im Hauptfall (Scans auf dem Handy). Gezeigt wird immer nur die aktuelle Seite.
+- `pdfjs-dist` (~430 KB Chunk + 1,2 MB Worker) wird per `React.lazy` erst beim
+  ersten PDF geladen und ist in `vite.config.js` aus dem Precache ausgenommen:
+  ohne Verbindung zum Pi gibt es sowieso nichts vorzuschauen.
+- Nicht eingebettete Standardschriften (Helvetica, Times) liegen unter
+  `/pdfjs/standard_fonts/`; das Plugin `pdfjs-standard-fonts` in
+  `vite.config.js` liefert sie im Dev aus node_modules und kopiert sie beim
+  Build nach `dist`. Ohne sie bleiben erzeugte PDFs stellenweise leer.
+- `GET /files/download?inline=true` liefert dieselben Bytes mit
+  `Content-Disposition: inline`. Für `<img>`/`<video>` ist das gleichgültig,
+  entscheidend beim Öffnen in einem neuen Tab – mit `attachment` würde daraus
+  ein Download.
+- Große Dateien (Bild > 20 MB, PDF > 30 MB, Text > 512 KB) laden erst nach
+  Rückfrage. Video und Audio sind absichtlich ohne Grenze: die streamen per
+  Range-Request.
+- Die offene Vorschau steht als `?preview=<name>` in der URL. Öffnen legt einen
+  History-Eintrag an, Schließen und Blättern ersetzen ihn – damit schließt die
+  Zurück-Taste auf Android die Vorschau statt die Ablage zu verlassen.
 
 ## Teilen aus anderen Apps (Web Share Target)
 - Zweiter Eingang in die Ablage: die installierte App steht im Teilen-Menü des

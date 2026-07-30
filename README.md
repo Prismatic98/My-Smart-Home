@@ -126,7 +126,7 @@ Endpunkte unter `/backend/files`:
 | `PATCH` | `/rename` | Umbenennen (nur der Name) |
 | `PATCH` | `/move` | In einen anderen Ordner verschieben |
 | `DELETE` | `/entry?path=…` | Löschen (Ordner rekursiv) |
-| `GET` | `/download?path=…` | Download, mit Range-Unterstützung |
+| `GET` | `/download?path=…` | Download, mit Range-Unterstützung (`&inline=true` für die Vorschau) |
 | `GET` | `/usage` | Belegter/freier Speicher |
 
 Jeder Pfad aus einem Request läuft durch `resolveSafePath()`
@@ -139,6 +139,38 @@ Uploads streamen in eine `.upload-<uuid>.tmp` im Zielverzeichnis und werden
 erst per `rename` sichtbar. Halbfertige Dateien tauchen also nie im Listing
 auf, und bei Namensgleichheit wird hochgezählt (`bericht (1).pdf`) statt
 überschrieben.
+
+### Vorschau
+
+Ein Klick auf eine Datei öffnet die Vorschau, ein Klick auf einen Ordner betritt
+ihn. Markiert wird nur über die Checkbox — ein Klick kann nicht beides bedeuten,
+und „ansehen" braucht man viel häufiger als „auswählen".
+
+Was angezeigt wird, entscheidet [`lib/previewKind.js`](./src/features/files/lib/previewKind.js):
+
+| Typ | Vorschau | Warum |
+|---|---|---|
+| Bild | `<img>`, Original ohne Thumbnail | Serverseitiges Verkleinern bräuchte einen Bildkonverter auf dem Pi |
+| PDF | pdf.js, seitenweise | `<iframe>` bleibt in Chrome auf Android leer |
+| Video, Audio | `<video>`/`<audio>`, gestreamt | Range-Requests des Servers, lädt nur den benötigten Ausschnitt |
+| Text, Markdown, CSV, JSON, Code | roher Text | Gerendertes Markdown würde gerade die Zeichen verschlucken, wegen derer man nachschaut |
+| Office, Archive, Binärdateien | keine, nur Metadaten + Download | bräuchte einen Konverter (wie Nextcloud mit Collabora) — ein eigenes Projekt |
+
+Große Dateien (Bild > 20 MB, PDF > 30 MB, Text > 512 KB) laden erst nach
+Rückfrage: über Tailscale von unterwegs ist die Uploadleitung des Pi der
+Engpass. Video und Audio haben bewusst keine Grenze, sie streamen.
+
+`pdfjs-dist` kostet ~430 KB (Chunk) plus 1,2 MB (Worker) und wird deshalb per
+`React.lazy` erst beim ersten PDF geladen — wie der Notiz-Editor. Beides ist aus
+dem Precache ausgenommen: ohne Verbindung zum Pi gibt es nichts vorzuschauen.
+Die Standardschriften unter `/pdfjs/standard_fonts/` liefert das Plugin
+`pdfjs-standard-fonts` in [`vite.config.js`](./vite.config.js) aus; ohne sie
+bleiben erzeugte PDFs (Rechnungen, Formulare) stellenweise leer.
+
+Die offene Vorschau steht als `?preview=<name>` in der URL. Öffnen legt einen
+History-Eintrag an, Schließen und Blättern ersetzen ihn — damit schließt die
+Zurück-Taste auf Android die Vorschau, statt die Ablage zu verlassen. Als
+Nebeneffekt ist eine Vorschau verlinkbar.
 
 ### Teilen aus anderen Apps (Web Share Target)
 
@@ -172,6 +204,20 @@ Das Skript des Service Workers liegt in `public/`, weil es unter einem festen
 Namen ausgeliefert werden muss; es wird per `workbox.importScripts` in den
 generierten Worker gezogen. Ein eigener `fetch`-Listener ist der einzige Weg an
 einen POST — `generateSW` selbst kennt nur GET-Routen.
+
+> **Nach einer Manifest-Änderung neu installieren.** Android macht aus
+> `share_target` einen Intent-Filter in der WebAPK — **einmalig bei der
+> Installation**. Eine schon installierte PWA behält ihre alte WebAPK und
+> erscheint deshalb nicht im Teilen-Menü, auch wenn der Server längst das neue
+> Manifest ausliefert. Chrome prüft Manifest-Änderungen nur gelegentlich (grob
+> einmal täglich, und nur wenn die App gestartet wird). Verlässlich hilft nur:
+> PWA deinstallieren (App-Info → Deinstallieren, nicht nur das Symbol löschen)
+> und neu installieren. Kontrolle unter `chrome://webapks` — dort steht pro App
+> eine „Share Target URL", die bei einer veralteten WebAPK leer ist.
+>
+> Das gilt für alles, was Android beim Installieren aus dem Manifest übernimmt
+> (Name, Icons, `shortcuts`, `share_target`), nicht für die App selbst: neuer
+> JS-Code kommt normal über den Service Worker.
 
 **Testen** geht nur im echten Build, nicht im Dev-Server (dort ist der Service
 Worker über `devOptions.enabled: false` abgeschaltet):

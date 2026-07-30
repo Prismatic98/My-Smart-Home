@@ -73,6 +73,14 @@ $fab-inset: 24px;
   }
 }
 
+// Vergrößert die Trefferfläche der Checkbox, ohne das Layout zu verschieben:
+// negativer Rand frisst die Polsterung wieder auf.
+.checkboxHit {
+  padding: px-to-rem(8px);
+  margin: px-to-rem(-8px);
+  display: inline-flex;
+}
+
 .gridCardSelected {
   border-color: var(--mantine-color-teal-5);
   background: light-dark(var(--mantine-color-teal-0), rgba(32, 201, 151, 0.08));
@@ -221,4 +229,147 @@ $fab-inset: 24px;
 .storageBar {
   flex: 1;
   min-width: px-to-rem(80px);
+}
+
+// --- Dateivorschau ---------------------------------------------------------
+//
+// Das Fenster hat eine feste Höhe, damit die Bühne den ganzen übrigen Platz
+// bekommt und Kopf- wie Fußzeile stehen bleiben. Auf schmalen Bildschirmen ist
+// das Fenster bildschirmfüllend (fullScreen in FilePreviewModal), dort setzt
+// Mantine die Höhe selbst – deshalb greift die Vorgabe erst ab sm.
+
+.previewContent {
+  display: flex;
+  flex-direction: column;
+}
+
+// Feste Höhe nur im Fenstermodus, damit die Bühne den übrigen Platz bekommt.
+// Bildschirmfüllend setzt Mantine die Höhe selbst. Die Entscheidung fällt in
+// FilePreviewModal (useMediaQuery) – so gibt es nur eine Quelle für den
+// Breakpoint statt zwei, die sich um einen Pixel unterscheiden können.
+.previewContentWindowed {
+  height: 92dvh;
+}
+
+.previewHeader {
+  flex: 0 0 auto;
+  gap: var(--mantine-spacing-sm);
+  align-items: center;
+}
+
+.previewTitle {
+  flex: 1;
+  min-width: 0;
+}
+
+.previewTitleText {
+  min-width: 0;
+}
+
+.previewBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-md);
+}
+
+// Die Bühne selbst: dunkle Fläche, auf der Bild, Seite oder Player liegen.
+// `min-height: 0` ist Pflicht, sonst wächst der Flex-Kasten über das Fenster
+// hinaus statt innen zu scrollen.
+.previewFrame {
+  flex: 1;
+  min-height: px-to-rem(220px);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-8));
+}
+
+.previewStage {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.previewSpinner {
+  position: absolute;
+}
+
+.previewImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 150ms ease;
+
+  &[data-ready] {
+    opacity: 1;
+  }
+}
+
+.previewVideo {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.previewAudio {
+  width: 100%;
+  max-width: px-to-rem(420px);
+}
+
+.previewText {
+  padding: var(--mantine-spacing-xs);
+
+  pre {
+    // Logs und JSON sind oft sehr lang – umbrechen statt waagerecht scrollen,
+    // sonst ist auf dem Handy nichts davon lesbar.
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: transparent;
+  }
+}
+
+.previewFooter {
+  flex: 0 0 auto;
+}
+
+// --- PDF -------------------------------------------------------------------
+
+.pdfWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.pdfStage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--mantine-spacing-sm);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.pdfCanvas {
+  width: 100%;
+  height: auto;
+  // Eine PDF-Seite ist Papier: weiß, auch im Dark Mode. Sonst stehen
+  // schwarze Buchstaben auf dunklem Grund.
+  background: white;
+  box-shadow: var(--mantine-shadow-sm);
+  border-radius: px-to-rem(2px);
+}
+
+.pdfBusy {
+  position: absolute;
+  inset: 0;
+  background: light-dark(rgba(255, 255, 255, 0.55), rgba(0, 0, 0, 0.45));
+}
+
+.pdfPager {
+  flex: 0 0 auto;
+  padding: px-to-rem(6px) 0;
+  border-top: px-to-rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-5));
 }

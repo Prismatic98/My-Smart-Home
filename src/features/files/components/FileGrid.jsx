@@ -9,9 +9,12 @@ import classes from '../Files.module.scss';
 /**
  * Kachelansicht.
  *
- * Ein Klick genügt: auf einem Ordner geht es hinein, auf einer Datei wird sie
- * markiert. Kein Doppelklick – den gibt es auf dem Handy ohnehin nicht, und
- * zwei verschiedene Klick-Bedeutungen auf derselben Kachel wären nur verwirrend.
+ * Ein Klick genügt: auf einem Ordner geht es hinein, auf einer Datei öffnet sich
+ * die Vorschau. Kein Doppelklick – den gibt es auf dem Handy ohnehin nicht.
+ *
+ * Markiert wird ausschließlich über die Checkbox. Das war früher der Klick auf
+ * die Kachel, aber ein Klick kann nicht beides bedeuten – und „ansehen" ist die
+ * Handlung, die man hundertmal häufiger will als „auswählen".
  */
 export default function FileGrid({
   entries,
@@ -43,13 +46,20 @@ export default function FileGrid({
             }}
           >
             <Group justify="space-between" wrap="nowrap" mb={4}>
-              <Checkbox
-                size="xs"
-                checked={isSelected}
-                aria-label={`${entry.name} auswählen`}
-                onChange={() => onToggle(entry.name)}
+              {/* Größere Trefferfläche als die Checkbox selbst – mit dem Daumen
+                  ist ein 16-px-Kästchen nicht zu treffen. */}
+              <div
+                className={classes.checkboxHit}
                 onClick={(event) => event.stopPropagation()}
-              />
+                role="presentation"
+              >
+                <Checkbox
+                  size="sm"
+                  checked={isSelected}
+                  aria-label={`${entry.name} auswählen`}
+                  onChange={() => onToggle(entry.name)}
+                />
+              </div>
               <FileEntryMenu
                 entry={entry}
                 onDownload={onDownload}

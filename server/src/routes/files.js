@@ -42,6 +42,21 @@ const pathQuerySchema = {
   properties: { path: { type: 'string', maxLength: 4096, default: '/' } },
 };
 
+/**
+ * Wie pathQuerySchema, plus `inline`: dann geht die Datei mit
+ * `Content-Disposition: inline` raus und der Browser zeigt sie an, statt einen
+ * Download anzustoßen. Genau ein Buchstabe Unterschied in der Kopfzeile
+ * entscheidet zwischen Vorschau und Speichern-Dialog.
+ */
+const downloadQuerySchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    path: { type: 'string', maxLength: 4096, default: '/' },
+    inline: { type: 'boolean', default: false },
+  },
+};
+
 export default async function filesRoutes(app) {
   /** Inhalt eines Verzeichnisses. */
   app.get('/list', { schema: { querystring: pathQuerySchema } }, async (request) => {
@@ -251,10 +266,12 @@ export default async function filesRoutes(app) {
    * Download als Stream.
    *
    * Range-Requests werden mitbedient. Das kostet hier wenig und ist die
-   * Voraussetzung dafür, dass ein <video>/<audio>-Element später springen kann –
-   * ohne Range lädt der Browser jedes Mal die ganze Datei.
+   * Voraussetzung dafür, dass ein <video>/<audio>-Element springen kann – ohne
+   * Range lädt der Browser jedes Mal die ganze Datei.
+   *
+   * `inline=true` liefert dieselben Bytes, aber als Vorschau statt als Download.
    */
-  app.get('/download', { schema: { querystring: pathQuerySchema } }, async (request, reply) => {
+  app.get('/download', { schema: { querystring: downloadQuerySchema } }, async (request, reply) => {
     const { absPath, relPath, stats } = await resolveExisting(request.query.path, {
       missingMessage: 'Die Datei existiert nicht (mehr).',
     });
@@ -288,7 +305,7 @@ export default async function filesRoutes(app) {
       // Dateinamen unbeschadet beim Browser an.
       .header(
         'Content-Disposition',
-        `attachment; filename*=UTF-8''${encodeURIComponent(name)}`
+        `${request.query.inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(name)}`
       )
       // Der Inhalt kann sich unter demselben Pfad jederzeit ändern.
       .header('Cache-Control', 'private, no-cache');

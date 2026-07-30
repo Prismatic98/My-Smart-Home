@@ -14,7 +14,8 @@ import classes from '../Files.module.scss';
  * Spalten blendet Files.module.scss aus) – Größe und Datum stehen dann in der
  * zweiten Zeile unter dem Namen.
  *
- * Ein Klick auf die Zeile betritt den Ordner bzw. markiert die Datei.
+ * Ein Klick auf die Zeile betritt den Ordner bzw. öffnet die Vorschau der
+ * Datei. Markiert wird nur über die Checkbox in der ersten Spalte.
  */
 export default function FileTable({
   entries,
@@ -78,7 +79,7 @@ export default function FileTable({
             >
               <Table.Td onClick={(event) => event.stopPropagation()}>
                 <Checkbox
-                  size="xs"
+                  size="sm"
                   checked={selected.has(entry.name)}
                   aria-label={`${entry.name} auswählen`}
                   onChange={() => onToggle(entry.name)}

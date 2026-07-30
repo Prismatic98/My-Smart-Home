@@ -56,6 +56,17 @@ export function uploadUrl(path) {
   return `${BACKEND_URL}/files/upload?${query({ path })}`;
 }
 
+/**
+ * Dieselben Bytes wie `downloadUrl`, aber mit `Content-Disposition: inline`.
+ *
+ * Für <img>/<video> macht das keinen Unterschied – dort ignoriert der Browser
+ * die Kopfzeile. Entscheidend ist sie beim Öffnen in einem neuen Tab: mit
+ * `attachment` würde daraus ein Download statt einer Anzeige.
+ */
+export function previewUrl(path) {
+  return `${BACKEND_URL}/files/download?${query({ path, inline: true })}`;
+}
+
 /** Löst den Download aus, ohne die Seite zu verlassen. */
 export function triggerDownload(path, name) {
   const link = document.createElement('a');
