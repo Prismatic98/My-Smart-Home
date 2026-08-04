@@ -15,7 +15,7 @@ import UnavailableBadge from './UnavailableBadge.jsx';
  * liefert. Eine Übersetzungstabelle für „Main Light" wäre eine Annahme über den
  * Hersteller und würde beim nächsten Gerät nicht greifen.
  */
-export default function SwitchGroup({ device, entities, title }) {
+export default function SwitchGroup({ device, entities, title, disabled = false }) {
   if (!entities || entities.length === 0) return null;
 
   return (
@@ -27,14 +27,19 @@ export default function SwitchGroup({ device, entities, title }) {
       )}
       <Stack gap={6}>
         {entities.map((entity) => (
-          <SwitchRow key={entity.entity_id} entity={entity} deviceName={device.name} />
+          <SwitchRow
+            key={entity.entity_id}
+            entity={entity}
+            deviceName={device.name}
+            disabled={disabled}
+          />
         ))}
       </Stack>
     </Stack>
   );
 }
 
-export function SwitchRow({ entity, deviceName }) {
+export function SwitchRow({ entity, deviceName, disabled = false }) {
   const { setSwitch } = useSmartHomeServices();
   const [on, setOn] = useOptimisticValue(isOn(entity));
   const unavailable = isUnavailable(entity);
@@ -57,6 +62,7 @@ export function SwitchRow({ entity, deviceName }) {
         ) : (
           <Switch
             checked={on}
+            disabled={disabled}
             onChange={(event) => handleChange(event.currentTarget.checked)}
             aria-label={shortLabel(entity, deviceName)}
           />

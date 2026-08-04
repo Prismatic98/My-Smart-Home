@@ -305,6 +305,93 @@ Sensoren-Dashboard – bewusst später.
   Entscheidung wie bei der Dateivorschau.
 - Nicht erreichbare Entitäten werden markiert und ihre Controls **gesperrt,
   nicht versteckt**: verschwindende Knöpfe sehen wie ein Fehler der App aus.
+- **Erreichbarkeit** ist allein `isUnavailable()` – der Zustand `unavailable`
+  bzw. `unknown` der Entität. `isReachable()` in deviceModel.js bündelt die
+  Frage an einer Stelle, damit Kachel und Detailseite nicht auseinanderlaufen.
+  Eine weitergehende Erkennung („Lampe ohne Strom, obwohl HA sie als an
+  meldet") wurde versucht und **bewusst wieder entfernt**. Zwei Signale wurden
+  am 04.08.2026 gegen den echten Bestand gemessen und taugen beide nicht;
+  nicht erneut versuchen, ohne vorher zu messen:
+  - Die Transport-Attribute desselben Sensors (`lan_available`, `ble_available`).
+    `lan_available` flappt: dieselben zwei Lampen meldeten um 07:23 `false` und
+    um 11:16 `true`, ohne dass physisch etwas passiert war – der Wert hängt nur
+    daran, ob die letzte LAN-Abfrage zufällig eine Antwort bekam. Außerdem
+    können manche Geräte gar kein LAN (TV) und funktionieren trotzdem.
+  - Das Alter von `last_reported` der Lichtentität. Es bewegt sich **nur**,
+    wenn das Gerät geschaltet wurde; der turnusmäßige Poll schreibt die
+    Entität nicht neu. „Alt" heißt „unverändert", nicht „nicht erreichbar".
+  Damit bleibt offen: meldet die Hersteller-Cloud für eine stromlose Lampe
+  weiterhin `online: true`, hat auch Home Assistant selbst kein Signal – die
+  App kann dann nichts erkennen, was HA nicht erkennt.
+- **Effekt-Vorschau:** `effectColors.js` leitet aus dem Szenennamen eine
+  Farbfläche ab (`EffectSwatch`), weil die Datenquelle zu Szenen keine Bilder
+  liefert. Bewusste Ausnahme von „nichts annehmen": gedeutet werden gewöhnliche
+  englische Wörter („Forest", „Sunset", „Mars"), keine Hersteller oder Modelle.
+  Trifft nichts zu, entsteht aus dem Namen ein stabiler, aber **blasser**
+  Verlauf (`opacity: 0.5`) – erkennbar wiedererkennbar, ohne eine Lichtfarbe zu
+  behaupten. Trefferquote über alle 464 vorhandenen Szenen- und DIY-Namen: 92 %;
+  der Rest sind eigene DIY-Namen wie „Neuer Effekt" oder „ZDP Duo".
+  Die Reihenfolge in `PALETTES` ist bedeutsam – gesucht wird per
+  Teilzeichenkette, „Night Light" enthält „night", „Hot Air Balloon" enthält
+  „hot". Spezielleres muss zuerst stehen.
+- Sperren heißt hier auch: keine verlorenen Aufrufe. Jeder Service-Call an ein
+  totes Gerät kostet Kontingent der Cloud-API, ohne etwas zu bewirken. Deshalb
+  reichen Kachel und Detailseite ein `disabled` an **alle** Bedienelemente
+  durch (LightControls, SwitchGroup, SelectControl, NumberControl,
+  SegmentEditor, Buttons), zusätzlich zu deren eigener Entitätsprüfung.
+- **Mantine v9:** `Collapse` heißt die Prop `expanded`, nicht mehr `in`. Mit
+  `in={…}` bleibt der Bereich für immer zu – der Umschalter reagiert, der
+  Inhalt erscheint nie. Genau das hatte Segment-Editor und Diagnose-Panel
+  lahmgelegt. Bei Mantine-Updates auf solche Prop-Umbenennungen achten: ohne
+  TypeScript fällt das weder im Build noch im Lint auf.
+- Segmentfelder bekommen **immer** einen sichtbaren Rahmen und setzen
+  `--segment-color` nur, wenn die Entität wirklich eine Farbe meldet. Die
+  Segmente stehen sehr oft auf reinem Weiß; ohne Rahmen ist der Streifen auf
+  der hellen Karte unsichtbar. Ohne gemeldete Farbe wird schraffiert – „keine
+  Farbe bekannt" darf nicht wie „Grau eingestellt" aussehen.
+
+## Smart Home: bekannte Grenzen der Govee-Integration
+> Stand 04.08.2026, Integration `lasswellt/govee-homeassistant` 2026.7.8.
+> Das sind Grenzen der Datenquelle, keine offenen Aufgaben in der App.
+
+- **Zonen-Schalter melden nichts zurück.** `switch.*_main_light`,
+  `*_background_light`, `*_side_light`, `*_bottom_light` sind in der
+  Integration `RestoreEntity` mit optimistischem `_is_on`
+  (`GoveeLightZoneSwitchEntity`/`GoveeNamedLightSwitchEntity`): der Wert ändert
+  sich nur durch eigenes Schalten und wird über Neustarts hinweg wiederhergestellt.
+  Home Assistant selbst meldet also „aus", solange nicht einmal geschaltet
+  wurde – die App zeigt das korrekt an. Nicht in der App reparierbar.
+- **Segmente hat nicht jedes Gerät.** Echte Segment-Entitäten gibt es nur bei
+  Badezimmer (15), Flur (15), Schreibtisch (15) und Stehlampe (8).
+  Wohnzimmer, Schlafzimmer, TV und Pixel Light haben keine – deren SKU gibt
+  über die API keine Segmentsteuerung her. Bei ihnen fehlt der Segment-Abschnitt
+  deshalb zu Recht.
+- **Keine Bilder zu Szenen.** Die Developer-API liefert je Szene nur `id` und
+  `name` (`get_dynamic_scenes`/`get_diy_scenes`, ausgewertet in select.py);
+  in der gesamten Integration existiert kein Feld für Bild, Thumbnail oder URL.
+  Die Kachelbilder der Govee-App stammen aus deren interner App-API und sind
+  weder dokumentiert noch über Home Assistant erreichbar. Deshalb die
+  Namensdeutung in `effectColors.js` – nicht erneut nach einer Bildquelle
+  suchen.
+- **Befehle laufen meist über die Cloud, nicht über LAN.** Die Rangfolge in
+  `async_control_device` ist BLE > LAN > MQTT > REST. Tatsächlich greift
+  fast immer REST:
+  - BLE: für kein Gerät verfügbar (`ble_available: false` überall).
+  - LAN: ein Schreibvorgang gilt nur als erfolgreich, wenn das Gerät ihn
+    innerhalb von `LAN_WRITE_CONFIRM_TIMEOUT` (0,5 s) per Rücklesen bestätigt.
+    Bleibt das aus, fällt der Befehl auf REST zurück – die halbe Sekunde ist
+    dann **zusätzlich** verloren. Genau daher die spürbaren Hänger.
+    Achtung: `lan_available` beschreibt nur das **Lesen**; LAN-*Steuerung* ist
+    etwas anderes und muss in der Govee-App je Gerät freigeschaltet sein
+    (und wird nicht von jedem Modell unterstützt).
+  - MQTT: abgeschaltet. `enable_mqtt_control` ist nicht gesetzt (Standard aus)
+    und bräuchte zusätzlich E-Mail + Passwort im Config-Entry – dort steht nur
+    `api_key`, deshalb `mqtt_last_failure_reason: not_configured`.
+  - Am 04.08.2026 gemessen: Wohnzimmer wurde um 09:11 über LAN geschaltet,
+    Stehlampe (08:58) und Schreibtisch (09:12) über die Cloud.
+  Nachprüfbar über die Attribute `cloud_api_last_sent` und `lan_last_sent` am
+  Connectivity-Sensor. Die App hat darauf keinen Einfluss: sie ruft
+  HA-Services auf, die Transportwahl trifft allein die Integration.
 
 ## Feature-Aufbau
 - Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`

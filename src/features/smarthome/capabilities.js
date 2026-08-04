@@ -241,3 +241,21 @@ export function noneOptionOf(entity) {
 export function hasMeaningfulState(entity) {
   return !!entity && entity.state !== 'unknown' && entity.state !== 'unavailable';
 }
+
+/*
+ * Hinweis zur Erreichbarkeit: maßgeblich ist allein `isUnavailable()` oben.
+ *
+ * Eine darüber hinausgehende Erkennung („Lampe hat keinen Strom, obwohl Home
+ * Assistant sie als an meldet") wurde am 04.08.2026 versucht und wieder
+ * entfernt. Zwei Signale wurden gegen den echten Bestand gemessen und taugen
+ * beide nicht – nicht erneut versuchen, ohne vorher zu messen:
+ *
+ *  - Die Transport-Attribute des Connectivity-Sensors (`lan_available` &c.).
+ *    `lan_available` flappt: dieselben zwei Lampen meldeten um 07:23 `false`
+ *    und um 11:16 `true`, ohne dass physisch etwas passiert war. Der Wert hängt
+ *    nur daran, ob die letzte LAN-Abfrage zufällig eine Antwort bekam. Manche
+ *    Geräte können außerdem gar kein LAN und funktionieren trotzdem.
+ *  - Das Alter von `last_reported` der Lichtentität. Es bewegt sich nur, wenn
+ *    das Gerät geschaltet wurde; der turnusmäßige Poll schreibt die Entität
+ *    nicht neu. „Alt" heißt „unverändert", nicht „nicht erreichbar".
+ */

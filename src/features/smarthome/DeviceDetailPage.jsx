@@ -23,15 +23,17 @@ import {
 } from '@tabler/icons-react';
 
 import { useHomeAssistant } from '../../lib/HAProvider.jsx';
+import { belongsToMusic, hasNoneOption, noneOptionOf } from './capabilities.js';
 import {
-  belongsToMusic,
-  hasNoneOption,
-  isUnavailable,
-  noneOptionOf,
-} from './capabilities.js';
-import { activeEffect, selectLabels, shortLabel } from './deviceModel.js';
+  activeEffect,
+  isReachable,
+  selectLabels,
+  shortLabel,
+  unreachableReason,
+} from './deviceModel.js';
 import DiagnosticsPanel from './components/DiagnosticsPanel.jsx';
 import EffectPicker from './components/EffectPicker.jsx';
+import EffectSwatch from './components/EffectSwatch.jsx';
 import LightControls from './components/LightControls.jsx';
 import NumberControl from './components/NumberControl.jsx';
 import RateLimitHint from './components/RateLimitHint.jsx';
@@ -94,7 +96,9 @@ export default function DeviceDetailPage() {
   }
 
   const { capabilities, primary } = device;
-  const unavailable = primary ? isUnavailable(primary) : false;
+  // Gesperrt, nicht versteckt: die Bedienelemente bleiben stehen, damit
+  // erkennbar ist, was das Gerät kann – sie schicken nur nichts los.
+  const unavailable = !isReachable(device);
   const effect = activeEffect(device);
   const canStopEffect = hasNoneOption(device.selects.scene);
 
@@ -140,16 +144,13 @@ export default function DeviceDetailPage() {
 
         {unavailable && (
           <Alert variant="light" color="gray">
-            <Text size="sm">
-              Home Assistant erreicht dieses Gerät gerade nicht. Die Bedienelemente bleiben
-              sichtbar, damit erkennbar ist, was das Gerät kann – sie sind aber gesperrt.
-            </Text>
+            <Text size="sm">{unreachableReason(device)}</Text>
           </Alert>
         )}
 
         {primary && (
           <Card withBorder radius="md" padding="md">
-            <LightControls entity={primary} />
+            <LightControls entity={primary} disabled={unavailable} />
           </Card>
         )}
 
@@ -186,7 +187,12 @@ export default function DeviceDetailPage() {
 
               {effect ? (
                 <Group gap="xs">
-                  <Badge variant="light" color="grape" size="lg">
+                  <Badge
+                    variant="light"
+                    color="grape"
+                    size="lg"
+                    leftSection={<EffectSwatch name={effect.name} size="xs" />}
+                  >
                     {effect.name}
                   </Badge>
                   <Text size="xs" c="dimmed">
@@ -212,7 +218,12 @@ export default function DeviceDetailPage() {
 
         {device.switches.length > 0 && (
           <Card withBorder radius="md" padding="md">
-            <SwitchGroup device={device} entities={device.switches} title="Zonen und Modi" />
+            <SwitchGroup
+              device={device}
+              entities={device.switches}
+              title="Zonen und Modi"
+              disabled={unavailable}
+            />
           </Card>
         )}
 
@@ -227,17 +238,27 @@ export default function DeviceDetailPage() {
               {/* Switch und Select sind unabhängig: es gibt Geräte mit Schalter
                   ohne Modus-Auswahl. Jeder Teil wird für sich gerendert. */}
               {device.music.switch && (
-                <SwitchRow entity={device.music.switch} deviceName={device.name} />
+                <SwitchRow
+                  entity={device.music.switch}
+                  deviceName={device.name}
+                  disabled={unavailable}
+                />
               )}
               {device.music.select && (
                 <SelectControl
                   entity={device.music.select}
                   deviceName={device.name}
                   label="Modus"
+                  disabled={unavailable}
                 />
               )}
               {musicNumbers.map((entity) => (
-                <NumberControl key={entity.entity_id} entity={entity} deviceName={device.name} />
+                <NumberControl
+                  key={entity.entity_id}
+                  entity={entity}
+                  deviceName={device.name}
+                  disabled={unavailable}
+                />
               ))}
             </Stack>
           </Card>
@@ -245,7 +266,7 @@ export default function DeviceDetailPage() {
 
         {capabilities.hasSegments && (
           <Card withBorder radius="md" padding="md">
-            <SegmentEditor device={device} />
+            <SegmentEditor device={device} disabled={unavailable} />
           </Card>
         )}
 
@@ -254,10 +275,20 @@ export default function DeviceDetailPage() {
             <Stack gap="sm">
               <Text fw={600}>Weitere Einstellungen</Text>
               {device.otherSelects.map((entity) => (
-                <SelectControl key={entity.entity_id} entity={entity} deviceName={device.name} />
+                <SelectControl
+                  key={entity.entity_id}
+                  entity={entity}
+                  deviceName={device.name}
+                  disabled={unavailable}
+                />
               ))}
               {otherNumbers.map((entity) => (
-                <NumberControl key={entity.entity_id} entity={entity} deviceName={device.name} />
+                <NumberControl
+                  key={entity.entity_id}
+                  entity={entity}
+                  deviceName={device.name}
+                  disabled={unavailable}
+                />
               ))}
             </Stack>
           </Card>
@@ -272,6 +303,7 @@ export default function DeviceDetailPage() {
                   key={entity.entity_id}
                   entity={entity}
                   label={shortLabel(entity, device.name)}
+                  disabled={unavailable}
                 />
               ))}
             </Stack>
@@ -286,6 +318,7 @@ export default function DeviceDetailPage() {
                 size="compact-sm"
                 variant="default"
                 leftSection={<IconRefresh size={14} />}
+                disabled={unavailable}
                 onClick={() => pressButton(entity)}
               >
                 {entity.attributes?.friendly_name?.replace(`${device.name} `, '') ?? 'Ausführen'}

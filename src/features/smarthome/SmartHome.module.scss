@@ -86,9 +86,15 @@
   max-width: px-to-rem(72px);
   height: px-to-rem(52px);
   padding: 0;
-  border: px-to-rem(2px) solid transparent;
+  // Der Rahmen ist immer sichtbar, nicht erst bei Auswahl: die Segmente stehen
+  // sehr oft auf Weiß (255,255,255), und ein weißes Feld ohne Rahmen ist auf
+  // der hellen Karte schlicht nicht zu sehen.
+  border: px-to-rem(2px) solid light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
   border-radius: var(--mantine-radius-sm);
-  background-color: var(--segment-color, var(--mantine-color-dark-4));
+  background-color: var(
+    --segment-color,
+    light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5))
+  );
   cursor: pointer;
   transition:
     transform 120ms ease,
@@ -101,6 +107,18 @@
   &:disabled {
     cursor: not-allowed;
     opacity: 0.5;
+  }
+
+  // Ohne gemeldete Farbe: schraffiert statt einfarbig, damit „keine Farbe
+  // bekannt" nicht wie „graue Farbe eingestellt" aussieht.
+  &[data-unknown] {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent px-to-rem(4px),
+      light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4)) px-to-rem(4px),
+      light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4)) px-to-rem(8px)
+    );
   }
 
   &[data-selected] {
@@ -184,10 +202,43 @@
 }
 
 .effectName {
+  display: flex;
+  align-items: center;
+  gap: px-to-rem(8px);
   flex: 1;
   min-width: 0;
   font-size: var(--mantine-font-size-sm);
   line-height: 1.25;
+}
+
+// min-width: 0 ist nötig, damit lineClamp neben der Vorschaufläche greift.
+.effectLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+// Farbvorschau einer Szene. Die Farben kommen aus dem Namen (effectColors.js) –
+// die Datenquelle liefert zu einer Szene keine Bilder.
+.effectSwatch {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: px-to-rem(30px);
+  height: px-to-rem(30px);
+  border-radius: var(--mantine-radius-sm);
+  border: px-to-rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-3));
+
+  // Kleine Variante für die Abzeichen „aktiver Effekt".
+  &[data-size='xs'] {
+    width: px-to-rem(12px);
+    height: px-to-rem(12px);
+    border-radius: px-to-rem(3px);
+  }
+
+  // Aus dem Namen abgeleitet statt gedeutet: gedämpft, damit die Fläche nicht
+  // eine Lichtfarbe behauptet, die niemand kennt.
+  &[data-guessed] {
+    opacity: 0.5;
+  }
 }
 
 // Der Anheft-Knopf ist auf dem Handy immer sichtbar (es gibt keinen Hover),

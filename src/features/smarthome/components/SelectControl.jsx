@@ -24,10 +24,16 @@ import { useSmartHomeServices } from '../services.js';
  * Für Listen mit hunderten Einträgen (Szenen) ist sie NICHT gedacht – dort
  * übernimmt EffectPicker. Ein Select mit 243 Optionen ist unbenutzbar.
  */
-export default function SelectControl({ entity, deviceName, label, placeholder = 'Nicht gesetzt' }) {
+export default function SelectControl({
+  entity,
+  deviceName,
+  label,
+  placeholder = 'Nicht gesetzt',
+  disabled = false,
+}) {
   const { selectOption } = useSmartHomeServices();
   const options = selectOptions(entity);
-  const unavailable = isUnavailable(entity);
+  const unavailable = disabled || isUnavailable(entity);
 
   // Ein Zustand, der nicht in den Optionen steht (oder "None" ist), zeigt sich
   // als leeres Feld – sonst behauptet das Select einen Wert, den es nicht gibt.

@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Badge, Button, Card, Group, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
-import { IconBulb, IconBulbOff, IconChevronRight, IconSparkles } from '@tabler/icons-react';
+import { IconBulb, IconBulbOff, IconChevronRight } from '@tabler/icons-react';
 
-import { colorHex, isOn, isUnavailable } from '../capabilities.js';
-import { activeEffect, describeState } from '../deviceModel.js';
+import { colorHex, isOn } from '../capabilities.js';
+import { activeEffect, describeState, isReachable, unreachableReason } from '../deviceModel.js';
+import EffectSwatch from './EffectSwatch.jsx';
 import { BrightnessSlider, PowerSwitch } from './LightControls.jsx';
 import UnavailableBadge from './UnavailableBadge.jsx';
 import classes from '../SmartHome.module.scss';
@@ -21,8 +22,10 @@ import classes from '../SmartHome.module.scss';
  */
 export default function DeviceCard({ device }) {
   const { primary, capabilities } = device;
-  const unavailable = primary ? isUnavailable(primary) : true;
-  const on = primary ? isOn(primary) && !unavailable : false;
+  // „Nicht erreichbar" umfasst beides: die Entität ist weg, oder das Gerät
+  // antwortet nicht mehr und die Cloud wiederholt nur den letzten Stand.
+  const reachable = primary ? isReachable(device) : false;
+  const on = primary ? isOn(primary) && reachable : false;
   const effect = activeEffect(device);
 
   // Die Karte leuchtet in der Farbe, die die Lampe gerade zeigt. Bei
@@ -37,19 +40,17 @@ export default function DeviceCard({ device }) {
       padding="md"
       className={classes.deviceCard}
       data-on={on || undefined}
-      data-unavailable={unavailable || undefined}
+      data-unavailable={!reachable || undefined}
       style={accent ? { '--device-color': accent } : undefined}
     >
       <Stack gap="sm" className={classes.cardBody}>
         <Group justify="space-between" wrap="nowrap" align="flex-start">
           <Group gap="sm" wrap="nowrap" className={classes.clamp}>
-            <ThemeIcon
-              variant="light"
-              color={on ? 'yellow' : 'gray'}
-              size="lg"
-              radius="md"
-              style={accent ? { color: accent } : undefined}
-            >
+            {/* Das Symbol bleibt farblich immer gleich: die Lichtfarbe steht
+                schon im Rahmen der Kachel. Zwei Träger derselben Information
+                machen die Übersicht nur unruhig – der Wechsel zwischen Birne
+                und durchgestrichener Birne sagt an/aus deutlich genug. */}
+            <ThemeIcon variant="light" color="gray" size="lg" radius="md">
               {on ? <IconBulb size={20} /> : <IconBulbOff size={20} />}
             </ThemeIcon>
 
@@ -63,16 +64,14 @@ export default function DeviceCard({ device }) {
             </div>
           </Group>
 
-          {unavailable ? (
-            <UnavailableBadge reason="Home Assistant erreicht dieses Gerät gerade nicht. Die Bedienelemente bleiben sichtbar, sind aber gesperrt." />
-          ) : (
+          {reachable ? (
             primary && <PowerSwitch entity={primary} />
+          ) : (
+            <UnavailableBadge reason={unreachableReason(device)} />
           )}
         </Group>
 
-        {primary && capabilities.brightness && !unavailable && (
-          <BrightnessSlider entity={primary} />
-        )}
+        {primary && capabilities.brightness && reachable && <BrightnessSlider entity={primary} />}
 
         <Group justify="space-between" wrap="nowrap" gap="xs" className={classes.cardFooter}>
           {effect ? (
@@ -85,7 +84,7 @@ export default function DeviceCard({ device }) {
                 variant="light"
                 color="grape"
                 size="sm"
-                leftSection={<IconSparkles size={11} />}
+                leftSection={<EffectSwatch name={effect.name} size="xs" />}
                 style={{ minWidth: 0 }}
               >
                 {effect.name}

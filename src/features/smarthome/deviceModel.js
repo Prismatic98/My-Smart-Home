@@ -329,6 +329,16 @@ export function activeEffect(device) {
   return null;
 }
 
+/**
+ * Kann das Gerät gerade bedient werden?
+ *
+ * Eine Stelle für die Frage, damit Kachel und Detailseite nicht auseinander
+ * laufen und eine spätere Erweiterung nur hier ansetzen muss.
+ */
+export function isReachable(device) {
+  return !(device.primary && isUnavailable(device.primary));
+}
+
 /** Kurzbeschreibung des Gerätezustands für die Karte. */
 export function describeState(device) {
   const { primary } = device;
@@ -336,6 +346,14 @@ export function describeState(device) {
   if (isUnavailable(primary)) return 'nicht erreichbar';
   if (!isOn(primary)) return 'aus';
   return device.capabilities.brightness ? `an · ${brightnessPct(primary)}%` : 'an';
+}
+
+/** Erklärt, warum ein Gerät gerade nicht bedienbar ist – für Badge und Hinweis. */
+export function unreachableReason() {
+  return (
+    'Home Assistant erreicht dieses Gerät gerade nicht. Die Bedienelemente bleiben ' +
+    'sichtbar, damit erkennbar ist, was das Gerät kann – sie sind aber gesperrt.'
+  );
 }
 
 /** Alle Rate-Limit-Sensoren der eingebundenen Integrationen. */

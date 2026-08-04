@@ -12,7 +12,7 @@ import { useSmartHomeServices } from '../services.js';
  * `step`), nicht aus einer Annahme über das Gerät. Gedrosselt wie alle Regler –
  * beim Ziehen höchstens ein Aufruf pro Fenster, beim Loslassen sofort.
  */
-export default function NumberControl({ entity, deviceName }) {
+export default function NumberControl({ entity, deviceName, disabled = false }) {
   const { setNumber } = useSmartHomeServices();
   const attrs = entity.attributes ?? {};
   const min = attrs.min ?? 0;
@@ -22,7 +22,7 @@ export default function NumberControl({ entity, deviceName }) {
 
   const live = Number.isFinite(Number(entity.state)) ? Number(entity.state) : min;
   const [value, setValue] = useOptimisticValue(live);
-  const unavailable = isUnavailable(entity);
+  const unavailable = disabled || isUnavailable(entity);
 
   function handleChange(next) {
     setValue(next);

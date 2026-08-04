@@ -63,7 +63,7 @@ function gradientColors(fromHex, toHex, count) {
   });
 }
 
-export default function SegmentEditor({ device }) {
+export default function SegmentEditor({ device, disabled = false }) {
   const { applySegmentColors } = useSmartHomeServices();
   const { segments } = device;
 
@@ -75,7 +75,11 @@ export default function SegmentEditor({ device }) {
   const [progress, setProgress] = useState(null);
 
   const cancelled = useRef(false);
+  // `busy` steuert die Fortschrittsanzeige und darf deshalb nur laufen heißen.
+  // `locked` ist die Frage, ob gerade überhaupt etwas gesendet werden darf –
+  // während eines Laufs oder wenn das Gerät nicht erreichbar ist.
   const busy = progress !== null;
+  const locked = busy || disabled;
 
   const available = useMemo(
     () => segments.filter((segment) => !isUnavailable(segment)),
@@ -143,19 +147,25 @@ export default function SegmentEditor({ device }) {
         </Button>
       </Group>
 
-      <Collapse in={open}>
+      <Collapse expanded={open}>
         <Stack gap="sm" pt={4}>
           <div className={classes.segmentStrip}>
             {segments.map((segment) => {
               const unavailable = isUnavailable(segment);
               const index = segmentIndex(segment);
+              // Meldet das Segment keine Farbe (aus, oder noch nie gemeldet),
+              // wird die Variable NICHT gesetzt – sonst überschriebe ein
+              // `transparent` die Rückfallfarbe aus dem Stylesheet und das Feld
+              // verschwände auf dem Kartenhintergrund.
+              const color = colorHex(segment);
               return (
                 <UnstyledButton
                   key={segment.entity_id}
                   className={classes.segment}
-                  style={{ '--segment-color': colorHex(segment) ?? 'transparent' }}
+                  style={color ? { '--segment-color': color } : undefined}
+                  data-unknown={color ? undefined : true}
                   data-selected={selected.has(segment.entity_id) || undefined}
-                  disabled={unavailable || busy}
+                  disabled={unavailable || locked}
                   onClick={() => toggleSegment(segment.entity_id)}
                   aria-label={`Segment ${index}${
                     selected.has(segment.entity_id) ? ', ausgewählt' : ''
@@ -177,7 +187,7 @@ export default function SegmentEditor({ device }) {
             <Button
               variant="subtle"
               size="compact-xs"
-              disabled={busy}
+              disabled={locked}
               onClick={() => setSelected(new Set(available.map((s) => s.entity_id)))}
             >
               Alle
@@ -185,7 +195,7 @@ export default function SegmentEditor({ device }) {
             <Button
               variant="subtle"
               size="compact-xs"
-              disabled={busy || selected.size === 0}
+              disabled={locked || selected.size === 0}
               onClick={() => setSelected(new Set())}
             >
               Keine
@@ -217,15 +227,15 @@ export default function SegmentEditor({ device }) {
           <Group gap="xs">
             <Button
               size="xs"
-              disabled={busy || selected.size === 0}
+              disabled={locked || selected.size === 0}
               onClick={paintSelection}
             >
               Auswahl färben ({selected.size})
             </Button>
-            <Button size="xs" variant="light" disabled={busy} onClick={paintAll}>
+            <Button size="xs" variant="light" disabled={locked} onClick={paintAll}>
               Alle gleich
             </Button>
-            <Button size="xs" variant="light" color="gray" disabled={busy} onClick={reset}>
+            <Button size="xs" variant="light" color="gray" disabled={locked} onClick={reset}>
               Zurücksetzen
             </Button>
           </Group>
@@ -249,7 +259,7 @@ export default function SegmentEditor({ device }) {
               withEyeDropper={false}
               flex={1}
             />
-            <Button size="xs" variant="light" disabled={busy} onClick={paintGradient}>
+            <Button size="xs" variant="light" disabled={locked} onClick={paintGradient}>
               Verlauf
             </Button>
           </Group>

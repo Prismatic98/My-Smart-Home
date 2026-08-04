@@ -33,6 +33,7 @@ import {
 import { activeEffect, selectLabels } from '../deviceModel.js';
 import { isFavorite, rememberUse, toggleFavorite, useFavorites, useRecents } from '../favorites.js';
 import { useSmartHomeServices } from '../services.js';
+import EffectSwatch from './EffectSwatch.jsx';
 import classes from '../SmartHome.module.scss';
 
 /**
@@ -267,7 +268,7 @@ export default function EffectPicker({ device, opened, onClose }) {
             <Text size="xs" c="dimmed">
               Aktiv:
             </Text>
-            <Badge variant="light" size="sm">
+            <Badge variant="light" size="sm" leftSection={<EffectSwatch name={activeName} size="xs" />}>
               {activeName}
             </Badge>
           </Group>
@@ -331,7 +332,8 @@ function EffectTile({ name, active, pinned, onSelect, onTogglePin }) {
   return (
     <div className={classes.effectTile} data-active={active || undefined}>
       <UnstyledButton className={classes.effectName} onClick={onSelect} title={name}>
-        <Text size="sm" lineClamp={2}>
+        <EffectSwatch name={name} />
+        <Text size="sm" lineClamp={2} className={classes.effectLabel}>
           {name}
         </Text>
       </UnstyledButton>

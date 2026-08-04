@@ -36,7 +36,7 @@ export default function DiagnosticsPanel({ device, expanded, onToggle }) {
         </Button>
       </Group>
 
-      <Collapse in={expanded}>
+      <Collapse expanded={expanded}>
         <Table withTableBorder verticalSpacing={6} fz="xs">
           <Table.Tbody>
             {diagnostics.map((entity) => (

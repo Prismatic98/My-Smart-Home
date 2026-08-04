@@ -26,6 +26,11 @@ import classes from '../SmartHome.module.scss';
  * Variante, `onChangeEnd` (Loslassen) sendet sofort. Ohne das würde ein
  * gezogener Regler das Anfragekontingent der Cloud-API leerfahren – siehe
  * services.js.
+ *
+ * `disabled` kommt von außen und sperrt zusätzlich zur eigenen Prüfung: die
+ * Entität selbst kann tadellos aussehen, während das Gerät als Ganzes nicht
+ * bedienbar ist (`isReachable` in deviceModel.js). Jeder Aufruf wäre dann
+ * verlorenes Kontingent der Cloud-API.
  */
 
 /** Farbvorschläge im Farbwähler: Weißtöne, dann Buntes. */
@@ -45,10 +50,10 @@ const SWATCHES = [
 ];
 
 /** An/Aus einer Lichtentität. */
-export function PowerSwitch({ entity, size = 'md' }) {
+export function PowerSwitch({ entity, size = 'md', disabled: blocked = false }) {
   const { setPower } = useSmartHomeServices();
   const [on, setOn] = useOptimisticValue(isOn(entity));
-  const disabled = isUnavailable(entity);
+  const disabled = blocked || isUnavailable(entity);
 
   async function handleChange(next) {
     setOn(next);
@@ -71,10 +76,10 @@ export function PowerSwitch({ entity, size = 'md' }) {
  * Helligkeitsregler. 0 % schaltet aus – eine Lampe mit Helligkeit 0 gibt es
  * nicht, und „aus" ist das, was der Nutzer damit meint.
  */
-export function BrightnessSlider({ entity, label = 'Helligkeit' }) {
+export function BrightnessSlider({ entity, label = 'Helligkeit', disabled: blocked = false }) {
   const { setBrightness } = useSmartHomeServices();
   const [pct, setPct] = useOptimisticValue(brightnessPct(entity));
-  const disabled = isUnavailable(entity);
+  const disabled = blocked || isUnavailable(entity);
 
   function handleChange(next) {
     setPct(next);
@@ -113,10 +118,10 @@ export function BrightnessSlider({ entity, label = 'Helligkeit' }) {
 }
 
 /** Farbwähler. Nur sinnvoll, wenn die Entität einen RGB-Modus meldet. */
-export function ColorControl({ entity }) {
+export function ColorControl({ entity, disabled: blocked = false }) {
   const { setColorHex } = useSmartHomeServices();
   const [hex, setHex] = useOptimisticValue(colorHex(entity) ?? '#ffffff');
-  const disabled = isUnavailable(entity);
+  const disabled = blocked || isUnavailable(entity);
 
   function handleChange(next) {
     setHex(next);
@@ -159,11 +164,11 @@ export function ColorControl({ entity }) {
  * Farbtemperatur in Kelvin. Grenzen kommen von der Lampe selbst
  * (min/max_color_temp_kelvin), nicht aus einer Annahme.
  */
-export function ColorTempControl({ entity }) {
+export function ColorTempControl({ entity, disabled: blocked = false }) {
   const { setColorTemp } = useSmartHomeServices();
   const { min, max, current } = colorTempRange(entity);
   const [kelvin, setKelvin] = useOptimisticValue(current ?? Math.round((min + max) / 2));
-  const disabled = isUnavailable(entity);
+  const disabled = blocked || isUnavailable(entity);
 
   function handleChange(next) {
     setKelvin(next);
@@ -210,10 +215,10 @@ export function ColorTempControl({ entity }) {
  * kann für jede etwas anderes können. Die gebündelten `device.capabilities`
  * entscheiden nur, welche Abschnitte die Detailseite überhaupt zeigt.
  */
-export default function LightControls({ entity, label }) {
+export default function LightControls({ entity, label, disabled = false }) {
   if (!entity) return null;
 
-  const unavailable = isUnavailable(entity);
+  const unavailable = disabled || isUnavailable(entity);
 
   return (
     <Stack gap="md">
@@ -221,12 +226,12 @@ export default function LightControls({ entity, label }) {
         <Text fw={600}>
           {label ?? (isOn(entity) && !unavailable ? 'Eingeschaltet' : 'Ausgeschaltet')}
         </Text>
-        <PowerSwitch entity={entity} size="lg" />
+        <PowerSwitch entity={entity} size="lg" disabled={disabled} />
       </Group>
 
-      {supportsBrightness(entity) && <BrightnessSlider entity={entity} />}
-      {supportsColorTemp(entity) && <ColorTempControl entity={entity} />}
-      {supportsRgb(entity) && <ColorControl entity={entity} />}
+      {supportsBrightness(entity) && <BrightnessSlider entity={entity} disabled={disabled} />}
+      {supportsColorTemp(entity) && <ColorTempControl entity={entity} disabled={disabled} />}
+      {supportsRgb(entity) && <ColorControl entity={entity} disabled={disabled} />}
     </Stack>
   );
 }
