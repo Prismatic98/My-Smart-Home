@@ -1,0 +1,33 @@
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: px-to-rem(6px);
+  width: 100%;
+  padding: px-to-rem(4px) 0;
+
+  &:focus-visible {
+    outline: px-to-rem(2px) solid var(--mantine-primary-color-filled);
+    outline-offset: px-to-rem(2px);
+    border-radius: var(--mantine-radius-sm);
+  }
+}
+
+.chevron {
+  color: var(--mantine-color-dimmed);
+  transition: transform 150ms ease;
+
+  &[data-opened] {
+    transform: rotate(180deg);
+  }
+}
+
+// Fragen sind oft länger als eine Zeile. Ein Knopf, der den Text abschneidet,
+// zwingt zum Raten, welche Frage man gerade antippt.
+.question {
+  height: auto;
+  padding-top: px-to-rem(6px);
+  padding-bottom: px-to-rem(6px);
+  white-space: normal;
+  text-align: left;
+  line-height: 1.35;
+}

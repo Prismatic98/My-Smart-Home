@@ -1,0 +1,71 @@
+.bar {
+  // Die Leiste ist ein Sprungziel-Streifen, kein Balken: keine durchgehende
+  // Linie, kein gefüllter Anteil. Sie zeigt, wo man ist, nicht wie weit.
+  padding: px-to-rem(2px);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: px-to-rem(6px);
+  // Mit dem Daumen zu treffen, auch wenn sichtbar nur eine Ziffer dasteht.
+  min-height: px-to-rem(36px);
+  padding: px-to-rem(4px) px-to-rem(8px);
+  border-radius: var(--mantine-radius-xl);
+  color: var(--mantine-color-dimmed);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+
+  &[data-current] {
+    background: var(--mantine-color-default-hover);
+    color: var(--mantine-color-text);
+  }
+
+  &:focus-visible {
+    outline: px-to-rem(2px) solid var(--mantine-primary-color-filled);
+    outline-offset: px-to-rem(-2px);
+  }
+}
+
+.marker {
+  display: grid;
+  place-items: center;
+  width: px-to-rem(22px);
+  height: px-to-rem(22px);
+  border-radius: 50%;
+  border: px-to-rem(1.5px) solid currentColor;
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1;
+  flex: 0 0 auto;
+
+  // Ausgefüllt = „hier steht schon etwas". Bewusst dieselbe gedeckte Farbe
+  // wie der Rahmen: die Markierung informiert, sie lobt nicht.
+  .step[data-filled] & {
+    background: var(--mantine-color-dimmed);
+    border-color: var(--mantine-color-dimmed);
+    color: var(--mantine-color-body);
+  }
+
+  .step[data-current] & {
+    border-color: var(--mantine-primary-color-filled);
+    background: var(--mantine-primary-color-filled);
+    color: var(--mantine-color-white);
+  }
+}
+
+.label {
+  font-size: var(--mantine-font-size-xs);
+  white-space: nowrap;
+
+  // Auf dem Handy trägt nur der aktuelle Schritt seinen Namen.
+  display: none;
+
+  .step[data-current] & {
+    display: inline;
+  }
+
+  @media (min-width: $mantine-breakpoint-sm) {
+    display: inline;
+  }
+}

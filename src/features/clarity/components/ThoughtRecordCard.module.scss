@@ -1,0 +1,45 @@
+.card {
+  height: 100%;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &:hover {
+    border-color: var(--mantine-primary-color-filled);
+    box-shadow: var(--mantine-shadow-xs);
+  }
+}
+
+.body {
+  flex: 1;
+  min-width: 0; // damit lineClamp im Flex-Container greift
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: px-to-rem(2px) solid var(--mantine-primary-color-filled);
+    outline-offset: px-to-rem(4px);
+    border-radius: var(--mantine-radius-sm);
+  }
+}
+
+// Datum in Versalien und weit gesperrt: es soll als Kennzeichnung gelesen
+// werden, nicht als Satzanfang.
+.date {
+  letter-spacing: 0.04em;
+}
+
+// „Entwurf" ist eine Zustandsangabe, keine Mahnung – deshalb ohne Farbe.
+.draft {
+  font-weight: 500;
+}
+
+.headline {
+  line-height: 1.3;
+}
+
+// Der Gedanke wird zitiert, nicht behauptet.
+.thought {
+  padding-left: px-to-rem(10px);
+  border-left: px-to-rem(2px) solid var(--mantine-color-default-border);
+  font-style: italic;
+}

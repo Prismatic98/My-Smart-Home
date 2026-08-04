@@ -101,6 +101,41 @@ function migrate(db) {
 
     CREATE INDEX IF NOT EXISTS idx_note_images_note ON note_images (noteId);
   `);
+
+  migrateClarity(db);
+}
+
+/**
+ * Schema des Klarblick-Moduls.
+ *
+ * EINE Tabelle für alle sieben Datenarten, und der Inhalt steht undurchsichtig
+ * in `payload`. Die Begründung steht ausführlich in clarity/repository.js;
+ * kurz: was der Server nicht in Spalten hat, kann er nicht indizieren, nicht
+ * durchsuchen und nicht versehentlich in ein Log schreiben.
+ *
+ * `kind` unterscheidet die Datenarten ('thoughtRecords', 'experiments', …).
+ * Die IDs sind clientseitige UUIDs und damit über alle Datenarten hinweg
+ * eindeutig, deshalb genügt ein gemeinsamer Primärschlüssel.
+ *
+ * Die beiden Uhren sind dieselben wie bei den Notizen und dürfen genauso wenig
+ * verwechselt werden: `updatedAt` kommt vom Client und entscheidet Konflikte,
+ * `serverUpdatedAt` setzt der Server und ist die Grundlage für `since`.
+ */
+function migrateClarity(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS clarity_records (
+      id              TEXT    PRIMARY KEY,
+      kind            TEXT    NOT NULL,
+      payload         TEXT    NOT NULL DEFAULT '{}',
+      createdAt       INTEGER NOT NULL,
+      updatedAt       INTEGER NOT NULL,
+      deletedAt       INTEGER,
+      serverUpdatedAt INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_clarity_server_updated_at
+      ON clarity_records (serverUpdatedAt);
+  `);
 }
 
 /** SQLite kann kein "ADD COLUMN IF NOT EXISTS" – deshalb vorher nachsehen. */

@@ -3,12 +3,12 @@ import { Alert, Container, Group, Skeleton, SimpleGrid, Text } from '@mantine/co
 import { IconAlertTriangle, IconFileText, IconListCheck } from '@tabler/icons-react';
 
 import ActionFab from '../../components/ActionFab/ActionFab.jsx';
+import SyncStatus from '../../components/SyncStatus/SyncStatus.jsx';
 import DeleteNoteModal from './components/DeleteNoteModal.jsx';
 import ListEditorModal from './components/ListEditorModal.jsx';
 import NoteCard from './components/NoteCard.jsx';
 import NoteEditorModal from './components/NoteEditorModal.jsx';
 import NotesEmptyState from './components/NotesEmptyState.jsx';
-import SyncStatus from './components/SyncStatus.jsx';
 import { emptyListBody, listStats, parseList } from './lib/noteList.js';
 import {
   createNote,

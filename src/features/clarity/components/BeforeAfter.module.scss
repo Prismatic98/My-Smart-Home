@@ -1,0 +1,9 @@
+// Zahlen nebeneinander, gedeckt. Die Zeile soll gelesen werden können, ohne
+// dass sie den Blick auf sich zieht – sie ist eine Erinnerung an den eigenen
+// früheren Wert, keine Auswertung.
+.row {
+  padding: px-to-rem(4px) px-to-rem(8px);
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-default-hover);
+  width: fit-content;
+}

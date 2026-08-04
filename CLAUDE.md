@@ -62,7 +62,9 @@ Self-hosted auf einem Raspberry Pi zuhause, von außen über Tailscale erreichba
   `~/docker/homeassistant/custom_components/hacs/` (Version 2.0.5), HA erkennt
   sie. Die Einrichtung über die Weboberfläche (GitHub-Gerätecode) macht Dennis
   selbst — das ist von GitHub bewusst nicht automatisierbar.
-- Govee-Szenen/Pixel Light: offen, später über Govee-Cloud (HACS + API-Key).
+- Govee-Szenen/Pixel Light: steht. Szenen, DIY-Effekte, Snapshots und
+  Musikmodi kommen über die Govee-Cloud-Integration und sind in der App über
+  den Effekt-Picker bedienbar. Das Pixel Light hat 243 Szenen.
 - SmartThings/Samsung-Waschmaschine: zurückgestellt.
 - Narwal Freo X Ultra (Saugroboter): keine saubere HA-Anbindung, zurückgestellt.
 
@@ -99,8 +101,12 @@ Backend (Fastify + SQLite) mit Notizen-Sync steht, Deployment über Caddy.
 Dateiablage (Upload, Dateibrowser, Download, Vorschau, Teilen) läuft.
 Smart Home ist auf die capability-getriebene Architektur umgebaut: Übersicht
 nach Bereich, Detailseite pro Gerät, Effekt-Picker, Segment-Editor.
-Offen: Thumbnails, Papierkorb, Google-Drive-Sync, Automationen-Ansicht,
-Sensoren-Dashboard – bewusst später.
+Klarblick ist vollständig: Gedankenprotokoll (sechs Schritte nach dem
+Arbeitsblatt aus der Sitzung), Denkfehler-Katalog, Sync und Komplettlöschung.
+Weitere Arbeitsblätter sind gestrichen, nicht verschoben — siehe eigenen
+Abschnitt. **Vor echten Daten: App-Login und verschlüsseltes restic-Backup.**
+Offen im Rest der App: Thumbnails, Papierkorb, Google-Drive-Sync,
+Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
 
 ## Backend
 - Liegt in `server/` mit eigener package.json (Node + Fastify + better-sqlite3).
@@ -432,6 +438,205 @@ Sensoren-Dashboard – bewusst später.
   Nachprüfbar über die Attribute `cloud_api_last_sent` und `lan_last_sent` am
   Connectivity-Sensor. Die App hat darauf keinen Einfluss: sie ruft
   HA-Services auf, die Transportwahl trifft allein die Integration.
+
+## Klarblick (Gedankenprotokoll)
+> Fachliche Herleitung: `docs/clarity-fachliche-grundlagen.md`
+> Manuelle Testanleitung: `docs/clarity-testanleitung.md`
+
+- **Anzeigename „Klarblick", Route und Code `clarity`.** Ordner
+  `src/features/clarity/`, Dexie-DB `smart-home-clarity`, Backend
+  `server/src/clarity/`, Endpunkte unter `/backend/clarity/*`, SQLite-Tabelle
+  `clarity_records`.
+- **Was das Modul ist:** ein digitales Gedankenprotokoll für die ambulante
+  Verhaltenstherapie, plus den Denkfehler-Katalog als Nachschlagewerk. Es
+  stellt Fragen und speichert Antworten.
+- **Der Umfang ist bewusst genau das.** Verhaltensexperiment,
+  Sicherheitsverhalten-Inventar, Expositionsleiter, täglicher Check-in und
+  Sitzungsnotizen waren geplant und sind am 05.08.2026 wieder gestrichen
+  worden – nicht verschoben. Ihre Tabellen sind mit Dexie v2 entfernt (siehe
+  db.js). Nichts davon ohne Rückfrage wieder ergänzen.
+- **Was es ausnahmslos nicht ist** – das sind Festlegungen, keine offenen
+  Aufgaben, und nichts davon ohne Rückfrage ergänzen:
+  - kein Diagnosewerkzeug: keine Fragebögen (SPIN, LSAS, PHQ-9, GAD-7 und
+    Vergleichbares sind bewusst draußen), keine Scores, keine Grenzwerte
+  - kein Ratgeber und kein Coach: keine Empfehlungen, keine Streaks, keine
+    Abzeichen, keine Wochen-Fortschrittsbalken, keine Mahnung bei fehlenden
+    Tagen, kein „Gut gemacht!" nach dem Absenden
+  - keine automatische Zuordnung von Denkfehlern zu eingegebenem Text
+  - keine Krisenerkennung: keine Schlagwortanalyse, keine Schwellenwerte auf
+    den Reglern, keine automatischen Einblendungen
+  Der Grund ist für alle Punkte derselbe: sobald die App bewertet, wird sie zu
+  einer weiteren Instanz, vor der man bestehen muss. Genau das ist bei sozialer
+  Angst das Problem.
+- **Wortwahl:** „Therapie", „Störung", „Symptom", „Patient" und „Behandlung"
+  kommen in der Oberfläche nicht vor – die App wird in der Bahn und im Büro
+  geöffnet. Du-Form, Alltagssprache, Fachbegriff höchstens als Sekundärtext.
+- **Urheberrecht:** Aufbau, Reihenfolge und Inhalt der Fragen folgen dem
+  Arbeitsblatt aus der Sitzung (Beck, Gedankenprotokoll). Die Methode ist
+  Fachallgemeingut, **der Wortlaut des Blattes nicht.** Alle Beschriftungen,
+  Fragen und Denkfehler-Beschreibungen stehen eigenständig formuliert unter
+  `src/features/clarity/content/` bzw. in `lib/thoughtRecord.js`. Nichts davon
+  abtippen, nichts aus dem Web nachziehen, keine Scans ins Repo.
+- Alle Intensitäts- und Glaubensangaben sind Ganzzahlen 0–100 – die Skala des
+  Blattes und dieselbe, die in der Sitzung benutzt wird. Keine 1–10-Skalen,
+  keine Sterne. `null` heißt „nicht angegeben" und ist etwas anderes als 0.
+- Rot ist für Fehler und die Komplettlöschung reserviert, nie für hohe
+  Angstwerte. Ein hoher Wert ist ein hoher Wert, keine schlechte Nachricht.
+
+### Klarblick: Datenschicht
+- **Eine synchronisierte Tabelle:** `thoughtRecords`. Dazu `meta`
+  (Wasserstand). Mehr ist es nicht.
+- `model.js` ist absichtlich **frei von React und Dexie** – dieselbe Trennung
+  wie bei `deviceModel.js`. Dadurch lassen sich Record-Form und Wertebereiche
+  in Node gegen den Server prüfen, ohne Browser. Dasselbe gilt für
+  `lib/thoughtRecord.js` (Schritte, Zusammenfassung, Datumsumwandlung).
+- Repository und Sync sind **generisch über den Tabellennamen** geschrieben,
+  obwohl es nur eine gibt. Das aufzulösen brächte nur Zeilen, die bei einer
+  zweiten Datenart wieder entstehen müssten.
+- **Der Denkfehler-Katalog liegt als Konstante im Code** (`content/
+  distortions.js`), nicht in der Datenbank – Nachschlagewerk, keine
+  Nutzerdaten. Wird nie synchronisiert und braucht keine Tombstones.
+- Unterlisten (Gedanken, Gefühle) stehen im Datensatz selbst und bekommen
+  keine eigene Tabelle – dieselbe Überlegung wie bei den Checklisten-Notizen.
+- **Dexie v1 → v2:** v1 hatte sieben Tabellen. v2 entfernt sechs davon plus
+  `contacts` (`table: null`) und löscht damit ihren Inhalt. Das ist hier
+  richtig und nicht nur bequem: liegen zu lassen, was niemand mehr anzeigen
+  kann, widerspricht dem Umgang mit diesen Daten. Die v1-Deklaration bleibt
+  stehen – Dexie braucht die Vorgeschichte für das Upgrade.
+- Auf dem Pi bleiben die Zeilen der entfernten Arbeitsblätter bis zur
+  Komplettlöschung liegen: ohne Tombstone lässt sich ein Löschvorgang nicht
+  weiterreichen, und der Server kennt die Datenarten nur als Zeichenkette.
+  Der Weg dahin ist `/clarity/debug`.
+
+### Klarblick: Sync
+- Ein Round-Trip, dasselbe Muster wie bei den Notizen: `POST /clarity/sync`
+  schickt `since` plus alle `dirty`-Datensätze nach Tabelle gruppiert, bekommt
+  `settled`, `changes` und `serverTime` zurück. Konflikte per last-write-wins
+  über `updatedAt`; `since`/`serverUpdatedAt` sind Server-Zeit. Die beiden
+  Uhren strikt trennen.
+- **Der Server kennt keine inhaltlichen Spalten.** Der Inhalt steht als eine
+  undurchsichtige Zeichenkette in `payload`, `kind` unterscheidet die Art. Was
+  nicht in Spalten steht, kann nicht indiziert, durchsucht oder versehentlich
+  geloggt werden – und ein neues Feld im Protokoll braucht keine Migration.
+- **Der Server nimmt auch eine unbekannte Datenart an** und reicht sie
+  unverändert zurück. Fastify räumt unbekannte Felder standardmäßig weg
+  (`removeAdditional`) statt sie abzulehnen; ein Client, der dem Server voraus
+  ist, käme dadurch in eine Endlosschleife (nie in `settled`, also für immer
+  „ungesendet"). `RECORD_KINDS` ist Dokumentation, keine Schranke. Umgekehrt
+  übergeht der Client Datenarten, die er nicht kennt – so kippen die alten
+  Zeilen auf dem Pi nichts um.
+- **Ein Tombstone trägt keinen Inhalt mehr** – anders als bei den Notizen.
+  `deleteRecord()` verwirft die Felder sofort, `toWire()` schickt `{}`, und der
+  Server leert zusätzlich selbst. Ein gelöschtes Protokoll, dessen Text noch
+  monatelang in IndexedDB und in der SQLite-Datei liegt, ist genau das, was bei
+  diesen Daten nicht passieren soll. Die Kehrseite: es gibt kein Zurückholen,
+  deshalb fragt die Oberfläche vor jedem Löschen nach.
+- **Regler lösen keinen Sync aus.** Geschrieben wird nach Dexie beim Loslassen
+  (`onChangeEnd`), der Abgleich läuft in seinem eigenen Takt (60 s, plus Fokus
+  und Reconnect). Der Rate-Limit-Reflex aus dem Smart-Home-Modul gilt hier
+  sinngemäß, auch wenn das eigene Backend kein Limit hat.
+- Kommt ein Datensatz mit unlesbarem Payload an, wird er **übersprungen**, nicht
+  mit einer leeren Hülle eingesetzt – sonst überschriebe ein Übertragungsfehler
+  den guten lokalen Stand. Dieselbe Überlegung wie beim Rückfall in
+  `parseList()` im Notizen-Modul.
+- `DELETE /clarity/all` löscht hart, ohne Tombstones – die einzige Stelle der
+  Anwendung, die das tut. Erst der Server, dann das Gerät: andersherum holte
+  der nächste Abgleich alles zurück. Andere Geräte behalten ihren Bestand, bis
+  dort dasselbe ausgelöst wird.
+
+### Klarblick: Datenschutz
+- **Das sind Gesundheitsdaten.** Damit ändert sich die Bewertung des fehlenden
+  App-Logins: wer im Tailnet die Adresse erreicht, sieht alles. Für Notizen war
+  das vertretbar, hier ist es die offene Flanke. **Der App-Login samt
+  HA-Token-Proxy ist deshalb das nächste Vorhaben; bis dahin gehören nur
+  Testdaten hinein.** Ein PIN vor dem Modul ist kein Ersatz und wird nicht
+  gebaut – er hülfe gegen einen kurzen Blick aufs entsperrte Handy und gegen
+  sonst nichts.
+- **Backup ist damit zwingend, und zwar `restic` mit Verschlüsselung, nicht
+  `rsync`.** Ein unverschlüsseltes Backup dieser Tabelle auf einem zweiten
+  Rechner verlagert das Problem nur.
+- **Kein Feldinhalt in Logs.** `routes/clarity.js` hat einen eigenen
+  Fehlerbehandler: der allgemeine in `app.js` reicht `error.message` einer
+  Schema-Verletzung nach außen, was hier unerwünscht ist. Geloggt werden
+  ausschließlich Anzahl, Zeitstempel und Fehlercode – nie das Fehlerobjekt.
+- Keine Volltextindizes oder Suchtabellen serverseitig; gesucht wird lokal über
+  Dexie. Kein `localStorage` für Inhalte. Nichts von diesem Modul im
+  Web-Share-Target.
+
+### Klarblick: Gedankenprotokoll
+- **Sechs Schritte, jeder mit genau einer Frage** (`THOUGHT_STEPS` in
+  `lib/thoughtRecord.js`): Situation · Gedanken · Gefühle · Denkfehler ·
+  Antwort · Ergebnis. Das sind die Spalten des Arbeitsblattes in dessen
+  Reihenfolge, eine Spalte je Bildschirm – eine Tabelle mit sechs Spalten ist
+  auf einem Handy nicht zu bedienen.
+  Auf dem Blatt sind Denkfehler, Antwort und der Glaube an die Antwort **eine**
+  Spalte („Angemessene Reaktion darauf"); der Denkfehler bekommt hier einen
+  eigenen Schritt, weil der Katalog zu lang ist, um über einem Textfeld zu
+  stehen. Gleiche Reihenfolge, gleicher Inhalt, ein Schritt mehr.
+- **Zwei Eingänge, absichtlich verschieden.** „Schnell festhalten"
+  (`QuickCaptureModal`) fragt auf einem Bildschirm nach Situation, Gedanke und
+  einem Gefühl – das ist der Fall, für den das Modul gebaut ist: in der Bahn,
+  einhändig, kurz nachdem etwas passiert ist. „Neues Protokoll" öffnet den
+  mehrstufigen Editor. Den unterwegs vorgesetzt zu bekommen hieße, dass am Ende
+  gar nichts festgehalten wird.
+- **Der Schritt steht in der URL** (`?schritt=3`), nicht im React-State. Damit
+  geht die Zurück-Taste des Handys einen Schritt zurück statt aus dem halb
+  geschriebenen Protokoll heraus – dieselbe Entscheidung wie bei der
+  Dateivorschau.
+- **Es gibt kein Speichern und kein Abbrechen.** `useRecordDraft` schreibt
+  gesammelt nach Dexie: nach einer Tippause, bei jedem Schrittwechsel, beim
+  Verlassen eines Feldes, beim Loslassen eines Reglers und bei
+  `visibilitychange` – auf dem Handy ist das Wegwischen der häufigste Weg, eine
+  Eingabe zu verlassen, und der einzige, bei dem React nichts mehr mitbekommt.
+  Ein Schreibvorgang je Tastendruck wäre dagegen ein Datenstand pro halbem Satz
+  und ein Sync-Anlass pro Sekunde.
+- Der lokale Stand führt, solange der Editor offen ist. Käme jede Änderung aus
+  der Datenbank zurück ins Feld, überschriebe der eigene gesicherte Stand die
+  Zeichen, die währenddessen getippt wurden.
+- **Leere Entwürfe räumt die Übersicht weg**, nicht der Editor: „Neues
+  Protokoll" legt den Datensatz sofort an (der Editor braucht etwas zum
+  Anhängen), und die Zurück-Taste läuft an jedem Aufräumen im Editor vorbei.
+  Beim Betreten von `/clarity` landet sie zwangsläufig. Gleiches Muster wie bei
+  `closeList()` in den Notizen.
+- **Denkfehler werden nie automatisch erkannt.** `DistortionList` ist dieselbe
+  Komponente für Nachschlagewerk (`/clarity/denkfehler`) und Auswahl im
+  Protokoll; ohne `onToggle` fehlen schlicht die Haken. Kein eingegebener Text
+  wird durchsucht, nichts vorgeschlagen. Ein Muster im eigenen Denken zu
+  erkennen ist die Übung – eine App, die sie abnimmt, hat sie erledigt statt
+  geübt. Auf dem Blatt steht die Spalte als „freiwillig"; das steht auch hier.
+- **Die sechs Hilfsfragen** (`RESPONSE_QUESTIONS`) stehen dort, wo sie auf dem
+  Blatt stehen: klein unter der Antwortspalte, erreichbar wenn man sie braucht.
+  Eingeklappt, und ein Antippen setzt die Frage als Zwischenüberschrift ins
+  Textfeld. Ein Feld je Frage wäre eine Pflichtübung mit sechs Kästchen, von
+  denen man vier leer lässt.
+- `ScaleSlider` ist der einzige Regler des Moduls und hält drei Regeln fest:
+  geschrieben wird beim Loslassen, `null` heißt „nicht angegeben" (nicht 0, und
+  deshalb steht ein unberührter Regler gedämpft in der Mitte), und ein hoher
+  Wert bekommt keine Warnfarbe.
+- `BeforeAfter` zeigt im Schritt „Ergebnis" die beiden Werte nebeneinander –
+  **ohne Differenz, ohne Pfeil, ohne Farbe.** Sobald daraus „−45" würde, hätte
+  die App eine Richtung bewertet, in die es zu gehen hat, und eine Sitzung,
+  nach der die Zahl gestiegen ist, sähe aus wie ein Misserfolg.
+- **Die Punkte der Schrittleiste sind kein Fortschritt.** Gefüllt heißt „hier
+  steht schon etwas" und hilft beim Wiederfinden. Es wird nichts gezählt,
+  nichts in Prozent umgerechnet, nichts angemahnt. Ein Protokoll mit drei
+  ausgefüllten Schritten ist vollständig für das, was in der Bahn ging.
+- Ein Gedanke wird nur dort bearbeitet, wo er entsteht. In den späteren
+  Schritten steht er als Zitat (`ThoughtsRecap`) – sonst stünde derselbe Text
+  an drei Stellen zum Ändern und man wüsste nie, welche Fassung gilt.
+- „Protokoll abschließen" ändert allein, in welcher Liste es steht. Kein Lob,
+  keine Bestätigung, keine Auswertung – und es lässt sich wieder öffnen.
+- Die Zeitangabe der Situation läuft über `<input type="datetime-local">`, nicht
+  über ein Datums-Paket: das Feld liefert auf Android und iOS den systemeigenen
+  Dialog. Umgerechnet wird von Hand (`toDateTimeInput`), niemals über
+  `toISOString()` – das rechnet nach UTC um und verschöbe die Uhrzeit.
+- `SyncStatus` liegt in `src/components`, weil zwei Module einen eigenen
+  Abgleich haben. Geteilt ist ausschließlich die Anzeige; die Zustände
+  (`useNotesSync`, `useClaritySync`) bleiben getrennt, damit ein Fehler im
+  einen Modul den anderen nicht mitbetrifft.
+- Routen: `/clarity` (Übersicht), `/clarity/thoughts/:recordId`,
+  `/clarity/denkfehler`, `/clarity/debug` (rohe Prüfseite auf der
+  Datenschicht, kein Teil der Oberfläche).
 
 ## Feature-Aufbau
 - Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`

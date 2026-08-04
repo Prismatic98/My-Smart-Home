@@ -1,9 +1,11 @@
 import multipart from '@fastify/multipart';
 import Fastify from 'fastify';
 
+import { createClarityRepository } from './clarity/repository.js';
 import { AppError } from './errors.js';
 import { createImageRepository } from './notes/imageStore.js';
 import { createNotesRepository } from './notesRepository.js';
+import clarityRoutes from './routes/clarity.js';
 import filesRoutes from './routes/files.js';
 import healthRoutes from './routes/health.js';
 import noteImageRoutes from './routes/noteImages.js';
@@ -80,11 +82,15 @@ export function buildApp({ db, logger = true }) {
 
   app.decorate('notes', createNotesRepository(db));
   app.decorate('noteImages', createImageRepository(db));
+  app.decorate('clarity', createClarityRepository(db));
 
   app.register(healthRoutes);
   app.register(notesRoutes);
   app.register(noteImageRoutes);
   app.register(filesRoutes, { prefix: '/files' });
+  // Eigener Zweig mit eigenem Fehlerbehandler – der allgemeine oben würde
+  // Details einer Schema-Verletzung nach außen geben. Siehe routes/clarity.js.
+  app.register(clarityRoutes, { prefix: '/clarity' });
 
   return app;
 }

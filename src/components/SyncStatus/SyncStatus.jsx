@@ -1,7 +1,7 @@
 import { ActionIcon, Group, Loader, Text, Tooltip } from '@mantine/core';
 import { IconAlertTriangle, IconCloudCheck, IconCloudOff, IconRefresh } from '@tabler/icons-react';
 
-import { formatDateTime, formatRelativeDateTime } from '../../../lib/formatDate.js';
+import { formatDateTime, formatRelativeDateTime } from '../../lib/formatDate.js';
 
 /**
  * Dezente Anzeige des Sync-Zustands.
@@ -9,6 +9,12 @@ import { formatDateTime, formatRelativeDateTime } from '../../../lib/formatDate.
  * Bewusst zurückhaltend: die App ist local-first, ein laufender oder
  * ausbleibender Sync ändert nichts an der Bedienbarkeit. Nur im Fehlerfall
  * wird es sichtbarer – und bietet dann einen Knopf zum erneuten Versuch.
+ *
+ * Steht in src/components und nicht in einem Feature-Ordner, weil inzwischen
+ * zwei Module einen eigenen Sync haben (Notizen, Klarblick). Geteilt wird
+ * ausschließlich die Anzeige: die Zustände (`useNotesSync`, `useClaritySync`)
+ * bleiben getrennt, damit ein Fehler im einen Modul den anderen nicht
+ * mitbetrifft.
  */
 export default function SyncStatus({ status, lastSyncedAt, error, onRetry }) {
   if (status === 'syncing') {
@@ -22,7 +28,12 @@ export default function SyncStatus({ status, lastSyncedAt, error, onRetry }) {
 
   if (status === 'offline') {
     return (
-      <Tooltip label="Änderungen liegen lokal bereit und gehen raus, sobald wieder Netz da ist." withArrow multiline w={260}>
+      <Tooltip
+        label="Änderungen liegen lokal bereit und gehen raus, sobald wieder Netz da ist."
+        withArrow
+        multiline
+        w={260}
+      >
         <div>
           <Line>
             <IconCloudOff size={14} />
@@ -37,12 +48,23 @@ export default function SyncStatus({ status, lastSyncedAt, error, onRetry }) {
     return (
       <Group gap={6} wrap="nowrap">
         <Tooltip label={error?.message ?? 'Unbekannter Fehler'} withArrow multiline w={280}>
-          <Text size="xs" c="red" span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Text
+            size="xs"
+            c="red"
+            span
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
             <IconAlertTriangle size={14} />
             Sync fehlgeschlagen
           </Text>
         </Tooltip>
-        <ActionIcon size="xs" variant="subtle" color="gray" onClick={onRetry} aria-label="Sync erneut versuchen">
+        <ActionIcon
+          size="xs"
+          variant="subtle"
+          color="gray"
+          onClick={onRetry}
+          aria-label="Sync erneut versuchen"
+        >
           <IconRefresh size={14} />
         </ActionIcon>
       </Group>

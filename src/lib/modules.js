@@ -1,4 +1,4 @@
-import { IconBulb, IconFolders, IconNotes } from '@tabler/icons-react';
+import { IconBulb, IconCompass, IconFolders, IconNotes } from '@tabler/icons-react';
 
 /**
  * Einzige Quelle der Wahrheit für die Module.
@@ -27,5 +27,15 @@ export const modules = [
     label: 'Smart Home',
     icon: IconBulb,
     color: 'blue',
+  },
+  {
+    // Route und Code heißen 'clarity', angezeigt wird 'Klarblick'. Im gesamten
+    // Modul kommen die Wörter Therapie, Störung, Symptom, Patient und
+    // Behandlung nicht vor – die App wird in der Bahn und im Büro geöffnet.
+    key: 'clarity',
+    path: '/clarity',
+    label: 'Klarblick',
+    icon: IconCompass,
+    color: 'grape',
   },
 ];
