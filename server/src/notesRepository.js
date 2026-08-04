@@ -6,7 +6,7 @@
  */
 
 /** Spalten, die der Client sehen darf – `serverUpdatedAt` ist rein intern. */
-const WIRE_COLUMNS = 'id, title, body, createdAt, updatedAt, deletedAt, pinned';
+const WIRE_COLUMNS = 'id, title, body, kind, createdAt, updatedAt, deletedAt, pinned';
 
 export function createNotesRepository(db) {
   const selectById = db.prepare('SELECT * FROM notes WHERE id = ?');
@@ -22,14 +22,15 @@ export function createNotesRepository(db) {
   );
 
   const insertNote = db.prepare(`
-    INSERT INTO notes (id, title, body, createdAt, updatedAt, deletedAt, pinned, serverUpdatedAt)
-    VALUES (@id, @title, @body, @createdAt, @updatedAt, @deletedAt, @pinned, @serverUpdatedAt)
+    INSERT INTO notes (id, title, body, kind, createdAt, updatedAt, deletedAt, pinned, serverUpdatedAt)
+    VALUES (@id, @title, @body, @kind, @createdAt, @updatedAt, @deletedAt, @pinned, @serverUpdatedAt)
   `);
 
   const updateNote = db.prepare(`
     UPDATE notes
        SET title = @title,
            body = @body,
+           kind = @kind,
            createdAt = @createdAt,
            updatedAt = @updatedAt,
            deletedAt = @deletedAt,
@@ -114,6 +115,9 @@ function normalize(note) {
     id: note.id,
     title: note.title ?? '',
     body: note.body ?? '',
+    // Unbekannte Werte werden zu 'text': lieber ein lesbares Textdokument als
+    // eine Notiz, die der Client keiner Ansicht zuordnen kann.
+    kind: note.kind === 'list' ? 'list' : 'text',
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
     deletedAt: note.deletedAt ?? null,

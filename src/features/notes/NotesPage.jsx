@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Alert, Container, Group, Skeleton, SimpleGrid, Text } from '@mantine/core';
-import { IconAlertTriangle, IconFileText } from '@tabler/icons-react';
+import { IconAlertTriangle, IconFileText, IconListCheck } from '@tabler/icons-react';
 
 import ActionFab from '../../components/ActionFab/ActionFab.jsx';
 import DeleteNoteModal from './components/DeleteNoteModal.jsx';
+import ListEditorModal from './components/ListEditorModal.jsx';
 import NoteCard from './components/NoteCard.jsx';
 import NoteEditorModal from './components/NoteEditorModal.jsx';
 import NotesEmptyState from './components/NotesEmptyState.jsx';
 import SyncStatus from './components/SyncStatus.jsx';
+import { emptyListBody, listStats, parseList } from './lib/noteList.js';
 import {
   createNote,
   deleteNote,
@@ -33,11 +35,48 @@ export default function NotesPage() {
   // gespeichert ist. Beim Schließen bleibt der Zustand stehen, damit das
   // Modal sauber ausblenden kann.
   const [editor, setEditor] = useState({ open: false, note: null, noteId: null });
+  const [list, setList] = useState({ open: false, noteId: null });
   const [deletion, setDeletion] = useState({ open: false, note: null });
   const [error, setError] = useState(null);
 
   const openCreate = () => setEditor({ open: true, note: null, noteId: newNoteId() });
-  const openEdit = (note) => setEditor({ open: true, note, noteId: note.id });
+
+  /**
+   * Eine Liste entsteht sofort in der Datenbank, nicht erst beim Speichern.
+   *
+   * Der Listen-Editor schreibt jede Änderung direkt durch (siehe dort) und
+   * braucht dafür eine Notiz, an der er hängen kann. Bleibt sie am Ende leer,
+   * räumt closeList() sie wieder weg – dasselbe Muster wie bei den Bildern
+   * einer verworfenen Notiz.
+   */
+  async function openCreateList() {
+    setError(null);
+    try {
+      const note = await createNote({ kind: 'list', body: emptyListBody() });
+      setList({ open: true, noteId: note.id });
+    } catch (cause) {
+      setError(`Die Liste konnte nicht angelegt werden: ${cause.message}`);
+    }
+  }
+
+  const openEdit = (note) =>
+    note.kind === 'list'
+      ? setList({ open: true, noteId: note.id })
+      : setEditor({ open: true, note, noteId: note.id });
+
+  /** Eine Liste ohne Titel und ohne Einträge ist nichts – die bleibt nicht stehen. */
+  async function closeList() {
+    const { noteId } = list;
+    setList((state) => ({ ...state, open: false }));
+    if (!noteId) return;
+
+    const stored = await getNote(noteId);
+    if (!stored || stored.deletedAt != null) return;
+    if (stored.title.trim().length > 0) return;
+    if (listStats(parseList(stored.body)).total > 0) return;
+
+    await deleteNote(noteId);
+  }
 
   const openDelete = (note) => setDeletion({ open: true, note });
   const closeDelete = () => setDeletion((state) => ({ ...state, open: false }));
@@ -137,7 +176,7 @@ export default function NotesPage() {
           ))}
         </SimpleGrid>
       ) : notes.length === 0 ? (
-        <NotesEmptyState onCreate={openCreate} />
+        <NotesEmptyState onCreate={openCreate} onCreateList={openCreateList} />
       ) : (
         <>
           {/* Überschriften nur, wenn es auch etwas zu trennen gibt. */}
@@ -173,6 +212,10 @@ export default function NotesPage() {
         onSubmit={handleSubmit}
       />
 
+      {/* Favorit und Löschen sitzen im Menü der Kachel – der Editor selbst
+          bleibt auf das beschränkt, was die Liste ausmacht. */}
+      <ListEditorModal opened={list.open} noteId={list.noteId} onClose={closeList} />
+
       <DeleteNoteModal
         opened={deletion.open}
         note={deletion.note}
@@ -183,11 +226,18 @@ export default function NotesPage() {
       <ActionFab
         actions={[
           {
-            key: 'new-note',
-            label: 'Neue Notiz',
+            key: 'new-doc',
+            label: 'Neues Textdokument',
             icon: IconFileText,
             color: 'yellow',
             onClick: openCreate,
+          },
+          {
+            key: 'new-list',
+            label: 'Neue Liste',
+            icon: IconListCheck,
+            color: 'teal',
+            onClick: openCreateList,
           },
         ]}
       />

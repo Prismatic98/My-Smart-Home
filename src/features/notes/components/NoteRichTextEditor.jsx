@@ -1,11 +1,11 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { FileButton, Tooltip } from '@mantine/core';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
 import { Placeholder } from '@tiptap/extensions';
-import { IconListCheck, IconPhotoPlus } from '@tabler/icons-react';
+import { IconListCheck, IconPhotoPlus, IconTypography } from '@tabler/icons-react';
 
 import { NoteImage } from '../extensions/noteImageNode.js';
 import { toEditorHtml } from '../lib/noteHtml.js';
@@ -22,8 +22,15 @@ import classes from '../Notes.module.scss';
  * Bilder kommen per Einfügen aus der Zwischenablage oder über den Knopf in der
  * Werkzeugleiste. Sie wandern sofort als Blob in IndexedDB und stehen im
  * Dokument nur als ID – hochgeladen wird später im Hintergrund.
+ *
+ * Die Formatierungsknöpfe sind standardmäßig eingeklappt. Die meisten Notizen
+ * sind schlichter Text; auf dem Handy fraßen zwei Reihen Werkzeuge den halben
+ * sichtbaren Bereich, bevor das erste Wort geschrieben war. Sichtbar bleibt nur
+ * der Umschalter.
  */
 export default function NoteRichTextEditor({ noteId, initialBody, onChange }) {
+  const [toolsOpen, setToolsOpen] = useState(false);
+
   // In einem Ref, damit die Editor-Instanz nicht bei jedem Tastendruck des
   // Elternteils neu aufgesetzt wird.
   const changeHandler = useRef(onChange);
@@ -113,56 +120,78 @@ export default function NoteRichTextEditor({ noteId, initialBody, onChange }) {
   return (
     <RichTextEditor editor={editor} className={classes.editor}>
       <RichTextEditor.Toolbar sticky stickyOffset={0}>
+        {/* Der Umschalter steht immer da und bleibt an derselben Stelle –
+            die Werkzeuge klappen rechts daneben auf, nicht darüber. */}
         <RichTextEditor.ControlsGroup>
-          <RichTextEditor.Bold />
-          <RichTextEditor.Italic />
-          <RichTextEditor.Strikethrough />
-          <RichTextEditor.Code />
-        </RichTextEditor.ControlsGroup>
-
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.H2 />
-          <RichTextEditor.H3 />
-        </RichTextEditor.ControlsGroup>
-
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.BulletList />
-          <RichTextEditor.OrderedList />
-          {/* Aufgabenliste bringt Mantine nicht mit – eigener Knopf. */}
-          <Tooltip label="Aufgabenliste" withArrow>
+          <Tooltip
+            label={toolsOpen ? 'Formatierung ausblenden' : 'Formatierung einblenden'}
+            withArrow
+          >
             <RichTextEditor.Control
-              onClick={() => editor?.chain().focus().toggleTaskList().run()}
-              active={editor?.isActive('taskList')}
-              aria-label="Aufgabenliste"
+              onClick={() => setToolsOpen((value) => !value)}
+              active={toolsOpen}
+              aria-label="Formatierung ein- oder ausblenden"
+              aria-expanded={toolsOpen}
             >
-              <IconListCheck size={16} />
+              <IconTypography size={16} />
             </RichTextEditor.Control>
           </Tooltip>
         </RichTextEditor.ControlsGroup>
 
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.Link />
-          <RichTextEditor.Unlink />
-          <RichTextEditor.Blockquote />
-          <RichTextEditor.Hr />
-        </RichTextEditor.ControlsGroup>
+        {toolsOpen && (
+          <>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Bold />
+              <RichTextEditor.Italic />
+              <RichTextEditor.Strikethrough />
+              <RichTextEditor.Code />
+            </RichTextEditor.ControlsGroup>
 
-        <RichTextEditor.ControlsGroup>
-          <FileButton accept="image/*" multiple onChange={(files) => void insertImages(files)}>
-            {(props) => (
-              <Tooltip label="Bild einfügen" withArrow>
-                <RichTextEditor.Control {...props} aria-label="Bild einfügen">
-                  <IconPhotoPlus size={16} />
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.H2 />
+              <RichTextEditor.H3 />
+            </RichTextEditor.ControlsGroup>
+
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.BulletList />
+              <RichTextEditor.OrderedList />
+              {/* Aufgabenliste bringt Mantine nicht mit – eigener Knopf. */}
+              <Tooltip label="Aufgabenliste" withArrow>
+                <RichTextEditor.Control
+                  onClick={() => editor?.chain().focus().toggleTaskList().run()}
+                  active={editor?.isActive('taskList')}
+                  aria-label="Aufgabenliste"
+                >
+                  <IconListCheck size={16} />
                 </RichTextEditor.Control>
               </Tooltip>
-            )}
-          </FileButton>
-        </RichTextEditor.ControlsGroup>
+            </RichTextEditor.ControlsGroup>
 
-        <RichTextEditor.ControlsGroup>
-          <RichTextEditor.Undo />
-          <RichTextEditor.Redo />
-        </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Link />
+              <RichTextEditor.Unlink />
+              <RichTextEditor.Blockquote />
+              <RichTextEditor.Hr />
+            </RichTextEditor.ControlsGroup>
+
+            <RichTextEditor.ControlsGroup>
+              <FileButton accept="image/*" multiple onChange={(files) => void insertImages(files)}>
+                {(props) => (
+                  <Tooltip label="Bild einfügen" withArrow>
+                    <RichTextEditor.Control {...props} aria-label="Bild einfügen">
+                      <IconPhotoPlus size={16} />
+                    </RichTextEditor.Control>
+                  </Tooltip>
+                )}
+              </FileButton>
+            </RichTextEditor.ControlsGroup>
+
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Undo />
+              <RichTextEditor.Redo />
+            </RichTextEditor.ControlsGroup>
+          </>
+        )}
       </RichTextEditor.Toolbar>
 
       <RichTextEditor.Content />

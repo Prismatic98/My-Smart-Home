@@ -18,6 +18,13 @@
   flex: 0 0 auto;
 }
 
+// Textdokument oder Liste – auf einen Blick unterscheidbar, ohne dass die
+// Kachel dafür eine Beschriftung braucht.
+.kindIcon {
+  color: var(--mantine-color-dimmed);
+  flex: 0 0 auto;
+}
+
 .body {
   flex: 1;
   min-width: 0; // damit lineClamp im Flex-Container greift

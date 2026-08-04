@@ -20,6 +20,10 @@ const noteSchema = {
     // darin, sondern nur als <img data-image-id="…"> – deshalb reicht ein
     // Limit, das für Text großzügig ist, ohne den Sync zu belasten.
     body: { type: 'string', maxLength: 1_000_000 },
+    // 'text' = HTML aus dem Editor, 'list' = JSON mit den Einträgen einer
+    // Checkliste. Der Server liest den Body in keinem Fall – die Art steht
+    // hier nur, damit der Client weiß, womit er die Notiz öffnen muss.
+    kind: { type: 'string', enum: ['text', 'list'], default: 'text' },
     createdAt: { type: 'integer', minimum: 0 },
     updatedAt: { type: 'integer', minimum: 0 },
     // null = aktiv, Zahl = gelöscht (Tombstone).

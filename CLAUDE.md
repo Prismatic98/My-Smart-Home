@@ -115,9 +115,49 @@ Sensoren-Dashboard – bewusst später.
   Restart-Schleife. Ein Smoke-Test im Dockerfile fängt das beim Build ab.
 - Erreichbar nur über den Reverse-Proxy (`HOST=127.0.0.1`), daher ohne Auth.
 
+## Notizen: zwei Arten
+- Eine Notiz hat ein `kind`: **`text`** (Textdokument, HTML aus TipTap im Body)
+  oder **`list`** (Checkliste, JSON im Body – siehe `lib/noteList.js`).
+  Dexie v4 und die Server-Spalte `kind` (Standard `'text'`) bringen das mit;
+  `kind` steht beim Anlegen fest und ändert sich nie.
+- **Die Einträge einer Liste stehen im vorhandenen `body`, nicht in einer
+  eigenen Tabelle.** Der Sync behandelt `body` als undurchsichtige Zeichenkette
+  und löst Konflikte per last-write-wins über `updatedAt`. Eine eigene Tabelle
+  bräuchte ein zweites Sync-Protokoll samt eigener Tombstones – und weil man
+  eine Liste ohnehin als Ganzes bearbeitet, gewönne man dadurch nichts.
+- `parseList()` fällt bei unbrauchbarem Body auf „Zeilen als Einträge" zurück,
+  statt eine leere Liste zu liefern. Ein leeres Ergebnis würde beim nächsten
+  Speichern den echten Inhalt überschreiben.
+- **Der Listen-Editor kennt kein Abbrechen:** jede Änderung (Haken, Eintrag,
+  Umbenennen, Löschen) wird sofort geschrieben. Eine Liste hakt man im
+  Vorbeigehen ab; wer den Dialog über die Zurück-Taste verlässt, darf nicht
+  fünf gesetzte Haken verlieren. Nur der Titel wird lokal gehalten und beim
+  Verlassen des Feldes geschrieben – ein Sync-Eintrag pro Tastendruck wäre
+  sinnlose Last.
+- Weil der Editor eine Notiz zum Anhängen braucht, legt „Neue Liste" sie sofort
+  an. Bleibt sie beim Schließen ohne Titel und ohne Einträge, wird sie wieder
+  gelöscht – dasselbe Aufräummuster wie `reconcileNoteImages()`.
+- Sortierung: offene Punkte in Eingabereihenfolge, erledigte darunter, zuletzt
+  Abgehaktes oben. So landet das gerade angetippte Kästchen direkt unter den
+  offenen Punkten und ein Versehen ist ohne Scrollen zurückzunehmen.
+- Kein Drag & Drop zum Umsortieren – dieselbe Begründung wie in der Dateiablage
+  (auf dem Handy nicht bedienbar).
+- **Der Listen-Editor bleibt karg.** Titel, Eingabefeld, Einträge – mehr nicht.
+  Fortschrittsbalken, Zähler und Zeitstempel waren drin und sind bewusst wieder
+  raus: eine Liste wird im Vorbeigehen bedient, jede zusätzliche Anzeige
+  verdrängt genau das, worum es geht. Favorit und Löschen sitzen im Menü der
+  Kachel und werden im Editor nicht wiederholt. Nichts davon ohne Rückfrage
+  wieder ergänzen.
+- `summarizeList()` liefert bewusst dieselbe Form wie `summarizeNoteBody()`,
+  damit `NoteCard` beide Arten ohne Verzweigung rendern kann.
+
 ## Notizen-Inhalt
-- Der Body ist HTML aus TipTap (`@mantine/tiptap`), nicht mehr Klartext.
-  Bestehende Notizen wurden beim Dexie-Upgrade auf v3 umgewandelt.
+- Der Body eines Textdokuments ist HTML aus TipTap (`@mantine/tiptap`), nicht
+  Klartext. Bestehende Notizen wurden beim Dexie-Upgrade auf v3 umgewandelt.
+- Die Formatierungsknöpfe sind **standardmäßig eingeklappt** und werden über
+  einen Umschalter in der Werkzeugleiste eingeblendet. Die meisten Notizen sind
+  schlichter Text; auf dem Handy fraßen zwei Reihen Werkzeuge den halben
+  sichtbaren Bereich, bevor das erste Wort geschrieben war.
 - Der Editor wird per `React.lazy` geladen – TipTap ist mit ~430 KB das größte
   Einzelpaket und darf nicht im Hauptbundle landen.
 - Aufgabenlisten über TaskList/TaskItem; Links über die Link-Erweiterung des

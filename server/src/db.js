@@ -71,6 +71,17 @@ function migrate(db) {
   addColumnIfMissing(db, 'notes', 'pinned', 'INTEGER NOT NULL DEFAULT 0');
 
   /**
+   * Art der Notiz: 'text' (HTML aus dem Editor) oder 'list' (JSON mit den
+   * Einträgen einer Checkliste). Für die Datenbank bleibt `body` in beiden
+   * Fällen eine Zeichenkette – der Server interpretiert ihn nie.
+   *
+   * Der Standardwert 'text' ist entscheidend für den Übergang: Clients, die
+   * die Spalte noch nicht kennen, schicken kein `kind` mit und ihre Notizen
+   * landen trotzdem korrekt als Textdokumente.
+   */
+  addColumnIfMissing(db, 'notes', 'kind', "TEXT NOT NULL DEFAULT 'text'");
+
+  /**
    * Bilder in Notizen.
    *
    * Nur die Metadaten stehen hier – die Bytes liegen als Datei unter

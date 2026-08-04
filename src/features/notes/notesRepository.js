@@ -53,14 +53,19 @@ export const newNoteId = newId;
  * bereits vor dem Speichern, damit eingefügte Bilder ihr zugeordnet werden
  * können.
  *
- * @param {{ id?: string, title?: string, body?: string, pinned?: number }} input
+ * `kind` steht beim Anlegen fest und ändert sich danach nicht mehr: 'text' ist
+ * ein Textdokument (HTML im Body), 'list' eine Checkliste (JSON im Body).
+ *
+ * @param {{ id?: string, title?: string, body?: string, pinned?: number,
+ *           kind?: 'text'|'list' }} input
  */
-export async function createNote({ id, title = '', body = '', pinned = 0 } = {}) {
+export async function createNote({ id, title = '', body = '', pinned = 0, kind = 'text' } = {}) {
   const now = Date.now();
   const note = {
     id: id ?? newId(),
     title: title.trim(),
     body,
+    kind,
     createdAt: now,
     updatedAt: now,
     deletedAt: null,
@@ -167,6 +172,7 @@ function toWireNote(note) {
     id: note.id,
     title: note.title ?? '',
     body: note.body ?? '',
+    kind: note.kind === 'list' ? 'list' : 'text',
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
     deletedAt: note.deletedAt ?? null,
@@ -212,6 +218,10 @@ export async function commitSyncResult({ pushed, settled, serverNotes, serverTim
         ...remote,
         deletedAt: remote.deletedAt ?? null,
         pinned: remote.pinned ? 1 : 0,
+        // Ein Server, der die Spalte noch nicht kennt, liefert kein `kind`.
+        // Ohne Rückfallwert stünde die Notiz danach ohne Art in Dexie und
+        // ließe sich nicht mehr öffnen.
+        kind: remote.kind === 'list' ? 'list' : 'text',
         dirty: 0,
       });
       applied += 1;

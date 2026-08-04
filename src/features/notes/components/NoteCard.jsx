@@ -1,6 +1,8 @@
 import { ActionIcon, Badge, Card, Group, Menu, Stack, Text } from '@mantine/core';
 import {
   IconDots,
+  IconFileText,
+  IconListCheck,
   IconPencil,
   IconPhoto,
   IconStar,
@@ -10,6 +12,7 @@ import {
 
 import { formatDateTime, formatRelativeDateTime } from '../../../lib/formatDate.js';
 import { summarizeNoteBody } from '../lib/noteHtml.js';
+import { summarizeList } from '../lib/noteList.js';
 import classes from './NoteCard.module.scss';
 
 /**
@@ -22,9 +25,13 @@ import classes from './NoteCard.module.scss';
  * ihr Stand ist auf einen Blick nützlich und wird deshalb nachgebaut.
  */
 export default function NoteCard({ note, onEdit, onTogglePinned, onDelete }) {
+  const isList = note.kind === 'list';
   const hasTitle = note.title.length > 0;
-  const summary = summarizeNoteBody(note.body);
+  // Beide Zusammenfassungen liefern dieselbe Form – die Kachel muss darunter
+  // nicht wissen, ob sie ein Dokument oder eine Liste zeigt.
+  const summary = isList ? summarizeList(note.body) : summarizeNoteBody(note.body);
   const pinned = Boolean(note.pinned);
+  const KindIcon = isList ? IconListCheck : IconFileText;
 
   return (
     <Card
@@ -49,13 +56,14 @@ export default function NoteCard({ note, onEdit, onTogglePinned, onDelete }) {
         >
           <Group gap={6} wrap="nowrap">
             {pinned && <IconStarFilled size={13} className={classes.pinIcon} />}
+            <KindIcon size={14} className={classes.kindIcon} />
             <Text
               fw={600}
               lineClamp={1}
               c={hasTitle ? undefined : 'dimmed'}
               fs={hasTitle ? undefined : 'italic'}
             >
-              {hasTitle ? note.title : 'Ohne Titel'}
+              {hasTitle ? note.title : isList ? 'Liste ohne Titel' : 'Ohne Titel'}
             </Text>
           </Group>
 
@@ -80,6 +88,11 @@ export default function NoteCard({ note, onEdit, onTogglePinned, onDelete }) {
                   </Text>
                 </Group>
               ))}
+              {summary.tasksTotal > summary.tasks.length && (
+                <Text size="xs" c="dimmed" pl={17}>
+                  +{summary.tasksTotal - summary.tasks.length} weitere
+                </Text>
+              )}
             </Stack>
           )}
 

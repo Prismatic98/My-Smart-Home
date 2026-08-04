@@ -128,3 +128,40 @@
     opacity: 1;
   }
 }
+
+// --- Checklisten -----------------------------------------------------------
+
+.listRow {
+  padding: px-to-rem(2px) px-to-rem(4px);
+  border-radius: var(--mantine-radius-sm);
+
+  &:hover {
+    background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  }
+
+  // Erledigtes tritt zurück, bleibt aber lesbar – es soll noch prüfbar sein,
+  // was schon abgehakt wurde.
+  &[data-done] .listRowInput input {
+    color: var(--mantine-color-dimmed);
+    text-decoration: line-through;
+  }
+}
+
+// Der Titel steht ohne Beschriftung ganz oben und soll wie eine Überschrift
+// wirken – bearbeitbar ist er trotzdem.
+.listTitle input {
+  font-weight: 600;
+  padding-inline: px-to-rem(4px);
+}
+
+// Das Eingabefeld soll wie Text aussehen, nicht wie ein Formularfeld: erst
+// beim Hineinklicken darf es sich als bearbeitbar zu erkennen geben.
+.listRowInput input {
+  padding-inline: px-to-rem(4px);
+  border-radius: var(--mantine-radius-sm);
+
+  &:focus {
+    background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+    outline: px-to-rem(1px) solid var(--mantine-primary-color-filled);
+  }
+}

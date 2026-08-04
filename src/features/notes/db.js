@@ -86,3 +86,29 @@ db.version(3)
         note.dirty = 1;
       })
   );
+
+/**
+ * Version 4 unterscheidet Textdokumente und Checklisten.
+ *
+ * `kind` ist 'text' (HTML aus TipTap im `body`) oder 'list' (JSON mit den
+ * Einträgen im `body`, siehe lib/noteList.js). Alles Bestehende ist Text.
+ *
+ * Bewusst OHNE `updatedAt`/`dirty` anzufassen: Die Spalte ist auf dem Server
+ * mit demselben Standard belegt, es gibt also nichts zu übertragen. Ein
+ * erzwungenes Hochladen aller Notizen wäre reine Last – anders als beim
+ * Upgrade auf v3, wo sich der Inhalt selbst geändert hat.
+ */
+db.version(4)
+  .stores({
+    notes: 'id, updatedAt, createdAt, dirty, pinned, kind',
+    noteImages: 'id, noteId, dirty',
+    meta: 'key',
+  })
+  .upgrade((tx) =>
+    tx
+      .table('notes')
+      .toCollection()
+      .modify((note) => {
+        note.kind = 'text';
+      })
+  );

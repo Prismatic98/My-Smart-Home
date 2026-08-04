@@ -61,7 +61,7 @@ export default function NoteEditorModal({ opened, note, noteId, onClose, onSubmi
     <Modal
       opened={opened}
       onClose={onClose}
-      title={isEdit ? 'Notiz bearbeiten' : 'Neue Notiz'}
+      title={isEdit ? 'Textdokument bearbeiten' : 'Neues Textdokument'}
       size="xl"
       radius="md"
       centered
