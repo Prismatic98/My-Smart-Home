@@ -1,0 +1,53 @@
+/**
+ * Styles des Innehalten-Moduls.
+ *
+ * Zurückhaltend und ohne Alarmfarben: Rot ist ausschließlich für Fehler und
+ * für die Komplettlöschung reserviert, nie für hohe Werte auf einem Regler.
+ * Ein hoher Angstwert ist ein hoher Wert, keine schlechte Nachricht.
+ */
+
+.page {
+  // Ein Arbeitsblatt soll nicht wie ein Formular wirken, das abzuarbeiten ist.
+  // Eine begrenzte Zeilenlänge und großzügiger Weißraum tun dafür mehr als
+  // jede Farbe.
+  max-width: px-to-rem(920px);
+}
+
+// Der Einleitungstext bleibt schmal, auch wenn die Kartenspalten breit werden:
+// eine über den ganzen Bildschirm laufende Zeile liest sich schlecht.
+.intro {
+  max-width: px-to-rem(520px);
+}
+
+.title {
+  font-size: px-to-rem(28px);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+// Der Hinweis auf die fehlende Zugangskontrolle ist wichtig, aber er steht auf
+// jeder Seite. Kleiner Satz statt Absatz – gelesen wird er ohnehin einmal.
+.alertMessage {
+  font-size: var(--mantine-font-size-sm);
+}
+
+.sectionLabel {
+  letter-spacing: 0.06em;
+}
+
+// Der leere Zustand steht auf der Seite und nicht in einer Karte: eine leere
+// Karte sieht aus wie ein Platzhalter, der gefüllt gehört.
+.empty {
+  max-width: px-to-rem(520px);
+  padding-top: var(--mantine-spacing-xl);
+}
+
+.raw {
+  max-height: px-to-rem(320px);
+  overflow: auto;
+  font-size: var(--mantine-font-size-xs);
+}
+
+.danger {
+  border-color: var(--mantine-color-red-filled);
+}

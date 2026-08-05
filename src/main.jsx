@@ -14,7 +14,7 @@ import '@mantine/tiptap/styles.css';
 import './styles/global.scss';
 
 import App from './App.jsx';
-import ClaritySyncWorker from './features/clarity/ClaritySyncWorker.jsx';
+import PauseSyncWorker from './features/pause/PauseSyncWorker.jsx';
 import NotesSyncWorker from './features/notes/NotesSyncWorker.jsx';
 import { HAProvider } from './lib/HAProvider.jsx';
 import { theme } from './lib/theme.js';
@@ -34,7 +34,7 @@ createRoot(document.getElementById('root')).render(
       <QueryClientProvider client={queryClient}>
         {/* Hintergrundprozesse ohne eigene Darstellung – siehe NotesSyncWorker. */}
         <NotesSyncWorker />
-        <ClaritySyncWorker />
+        <PauseSyncWorker />
         <HAProvider>
           <BrowserRouter>
             <App />

@@ -101,7 +101,7 @@ Backend (Fastify + SQLite) mit Notizen-Sync steht, Deployment über Caddy.
 Dateiablage (Upload, Dateibrowser, Download, Vorschau, Teilen) läuft.
 Smart Home ist auf die capability-getriebene Architektur umgebaut: Übersicht
 nach Bereich, Detailseite pro Gerät, Effekt-Picker, Segment-Editor.
-Klarblick ist vollständig: Gedankenprotokoll (sechs Schritte nach dem
+Innehalten ist vollständig: Gedankenprotokoll (sechs Schritte nach dem
 Arbeitsblatt aus der Sitzung), Denkfehler-Katalog, Sync und Komplettlöschung.
 Weitere Arbeitsblätter sind gestrichen, nicht verschoben — siehe eigenen
 Abschnitt. **Vor echten Daten: App-Login und verschlüsseltes restic-Backup.**
@@ -439,14 +439,22 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   Connectivity-Sensor. Die App hat darauf keinen Einfluss: sie ruft
   HA-Services auf, die Transportwahl trifft allein die Integration.
 
-## Klarblick (Gedankenprotokoll)
-> Fachliche Herleitung: `docs/clarity-fachliche-grundlagen.md`
-> Manuelle Testanleitung: `docs/clarity-testanleitung.md`
+## Innehalten (Gedankenprotokoll)
+> Fachliche Herleitung: `docs/pause-fachliche-grundlagen.md`
+> Manuelle Testanleitung: `docs/pause-testanleitung.md`
 
-- **Anzeigename „Klarblick", Route und Code `clarity`.** Ordner
-  `src/features/clarity/`, Dexie-DB `smart-home-clarity`, Backend
-  `server/src/clarity/`, Endpunkte unter `/backend/clarity/*`, SQLite-Tabelle
-  `clarity_records`.
+- **Anzeigename „Innehalten", Route und Code `pause`.** Ordner
+  `src/features/pause/`, Dexie-DB `smart-home-pause`, Backend
+  `server/src/pause/`, Endpunkte unter `/backend/pause/*`, SQLite-Tabelle
+  `pause_records`. Modul-Zeichen ist `IconRibbonHealth` (in `lib/modules.js`).
+- **Das Modul hieß bis zum 05.08.2026 „Klarblick" / `clarity`.** Zwei Stellen
+  tragen die Umbenennung, beide laufen von selbst und dürfen nicht entfernt
+  werden, solange noch ein Gerät mit altem Stand existiert:
+  - `server/src/db.js` benennt `clarity_records` beim Start in `pause_records`
+    um (nur wenn die Zieltabelle fehlt – ALTER TABLE bräche sonst ab).
+  - `features/pause/db.js` löscht die alte IndexedDB `smart-home-clarity`:
+    umbenennen kann IndexedDB nicht, und liegen lassen ist bei diesen Daten
+    keine Option. Der Bestand kommt beim ersten Abgleich vom Pi zurück.
 - **Was das Modul ist:** ein digitales Gedankenprotokoll für die ambulante
   Verhaltenstherapie, plus den Denkfehler-Katalog als Nachschlagewerk. Es
   stellt Fragen und speichert Antworten.
@@ -475,7 +483,7 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   Arbeitsblatt aus der Sitzung (Beck, Gedankenprotokoll). Die Methode ist
   Fachallgemeingut, **der Wortlaut des Blattes nicht.** Alle Beschriftungen,
   Fragen und Denkfehler-Beschreibungen stehen eigenständig formuliert unter
-  `src/features/clarity/content/` bzw. in `lib/thoughtRecord.js`. Nichts davon
+  `src/features/pause/content/` bzw. in `lib/thoughtRecord.js`. Nichts davon
   abtippen, nichts aus dem Web nachziehen, keine Scans ins Repo.
 - Alle Intensitäts- und Glaubensangaben sind Ganzzahlen 0–100 – die Skala des
   Blattes und dieselbe, die in der Sitzung benutzt wird. Keine 1–10-Skalen,
@@ -483,7 +491,7 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
 - Rot ist für Fehler und die Komplettlöschung reserviert, nie für hohe
   Angstwerte. Ein hoher Wert ist ein hoher Wert, keine schlechte Nachricht.
 
-### Klarblick: Datenschicht
+### Innehalten: Datenschicht
 - **Eine synchronisierte Tabelle:** `thoughtRecords`. Dazu `meta`
   (Wasserstand). Mehr ist es nicht.
 - `model.js` ist absichtlich **frei von React und Dexie** – dieselbe Trennung
@@ -496,6 +504,13 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
 - **Der Denkfehler-Katalog liegt als Konstante im Code** (`content/
   distortions.js`), nicht in der Datenbank – Nachschlagewerk, keine
   Nutzerdaten. Wird nie synchronisiert und braucht keine Tombstones.
+  Inhalt, Reihenfolge und Nummerierung sind seit dem 05.08.2026 die **zwölf**
+  Einträge des Blattes „Systematische Denkfehler" aus der Sitzung. Die IDs sind
+  dabei stabil geblieben, wo der Eintrag derselbe ist; `fortune_telling` (auf
+  dem Blatt Teil von „Katastrophisieren") und `unfair_comparison` gibt es nicht
+  mehr, alte Datensätze führen sie stumm mit. Die Klammerzusätze des Blattes
+  („auch Schwarz-Weiß-Denken", „Imperative") stehen bewusst nicht in der App –
+  sie benennen dasselbe ein zweites Mal in Fachsprache.
 - Unterlisten (Gedanken, Gefühle) stehen im Datensatz selbst und bekommen
   keine eigene Tabelle – dieselbe Überlegung wie bei den Checklisten-Notizen.
 - **Dexie v1 → v2:** v1 hatte sieben Tabellen. v2 entfernt sechs davon plus
@@ -506,10 +521,10 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
 - Auf dem Pi bleiben die Zeilen der entfernten Arbeitsblätter bis zur
   Komplettlöschung liegen: ohne Tombstone lässt sich ein Löschvorgang nicht
   weiterreichen, und der Server kennt die Datenarten nur als Zeichenkette.
-  Der Weg dahin ist `/clarity/debug`.
+  Der Weg dahin ist `/pause/debug`.
 
-### Klarblick: Sync
-- Ein Round-Trip, dasselbe Muster wie bei den Notizen: `POST /clarity/sync`
+### Innehalten: Sync
+- Ein Round-Trip, dasselbe Muster wie bei den Notizen: `POST /pause/sync`
   schickt `since` plus alle `dirty`-Datensätze nach Tabelle gruppiert, bekommt
   `settled`, `changes` und `serverTime` zurück. Konflikte per last-write-wins
   über `updatedAt`; `since`/`serverUpdatedAt` sind Server-Zeit. Die beiden
@@ -539,12 +554,12 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   mit einer leeren Hülle eingesetzt – sonst überschriebe ein Übertragungsfehler
   den guten lokalen Stand. Dieselbe Überlegung wie beim Rückfall in
   `parseList()` im Notizen-Modul.
-- `DELETE /clarity/all` löscht hart, ohne Tombstones – die einzige Stelle der
+- `DELETE /pause/all` löscht hart, ohne Tombstones – die einzige Stelle der
   Anwendung, die das tut. Erst der Server, dann das Gerät: andersherum holte
   der nächste Abgleich alles zurück. Andere Geräte behalten ihren Bestand, bis
   dort dasselbe ausgelöst wird.
 
-### Klarblick: Datenschutz
+### Innehalten: Datenschutz
 - **Das sind Gesundheitsdaten.** Damit ändert sich die Bewertung des fehlenden
   App-Logins: wer im Tailnet die Adresse erreicht, sieht alles. Für Notizen war
   das vertretbar, hier ist es die offene Flanke. **Der App-Login samt
@@ -555,7 +570,7 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
 - **Backup ist damit zwingend, und zwar `restic` mit Verschlüsselung, nicht
   `rsync`.** Ein unverschlüsseltes Backup dieser Tabelle auf einem zweiten
   Rechner verlagert das Problem nur.
-- **Kein Feldinhalt in Logs.** `routes/clarity.js` hat einen eigenen
+- **Kein Feldinhalt in Logs.** `routes/pause.js` hat einen eigenen
   Fehlerbehandler: der allgemeine in `app.js` reicht `error.message` einer
   Schema-Verletzung nach außen, was hier unerwünscht ist. Geloggt werden
   ausschließlich Anzahl, Zeitstempel und Fehlercode – nie das Fehlerobjekt.
@@ -563,7 +578,7 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   Dexie. Kein `localStorage` für Inhalte. Nichts von diesem Modul im
   Web-Share-Target.
 
-### Klarblick: Gedankenprotokoll
+### Innehalten: Gedankenprotokoll
 - **Sechs Schritte, jeder mit genau einer Frage** (`THOUGHT_STEPS` in
   `lib/thoughtRecord.js`): Situation · Gedanken · Gefühle · Denkfehler ·
   Antwort · Ergebnis. Das sind die Spalten des Arbeitsblattes in dessen
@@ -596,10 +611,10 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
 - **Leere Entwürfe räumt die Übersicht weg**, nicht der Editor: „Neues
   Protokoll" legt den Datensatz sofort an (der Editor braucht etwas zum
   Anhängen), und die Zurück-Taste läuft an jedem Aufräumen im Editor vorbei.
-  Beim Betreten von `/clarity` landet sie zwangsläufig. Gleiches Muster wie bei
+  Beim Betreten von `/pause` landet sie zwangsläufig. Gleiches Muster wie bei
   `closeList()` in den Notizen.
 - **Denkfehler werden nie automatisch erkannt.** `DistortionList` ist dieselbe
-  Komponente für Nachschlagewerk (`/clarity/denkfehler`) und Auswahl im
+  Komponente für Nachschlagewerk (`/pause/denkfehler`) und Auswahl im
   Protokoll; ohne `onToggle` fehlen schlicht die Haken. Kein eingegebener Text
   wird durchsucht, nichts vorgeschlagen. Ein Muster im eigenen Denken zu
   erkennen ist die Übung – eine App, die sie abnimmt, hat sie erledigt statt
@@ -675,7 +690,7 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   `toISOString()` – das rechnet nach UTC um und verschöbe die Uhrzeit.
 - `SyncStatus` liegt in `src/components`, weil zwei Module einen eigenen
   Abgleich haben. Geteilt ist ausschließlich die Anzeige; die Zustände
-  (`useNotesSync`, `useClaritySync`) bleiben getrennt, damit ein Fehler im
+  (`useNotesSync`, `usePauseSync`) bleiben getrennt, damit ein Fehler im
   einen Modul den anderen nicht mitbetrifft.
 - **Die Kachel in der Übersicht zeigt genau drei Dinge, jedes ungekürzt:** die
   Situation als Überschrift, die automatischen Gedanken samt Glaubenswert
@@ -699,28 +714,42 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   was dort steht. „Vorher" und „Nachher" tragen deshalb dieselbe Schrift und
   dieselbe Schriftfarbe – keine Differenz und keine Farbe, die von der Zahl
   abhängt.
-- Routen: `/clarity` (nur die beiden Kacheln), `/clarity/thoughts` (Liste),
-  `/clarity/thoughts/:recordId` (Editor), `/clarity/denkfehler` (Katalog,
-  angezeigt als „Systematische Denkfehler"), `/clarity/debug` (rohe Prüfseite
+- Routen: `/pause` (nur die beiden Kacheln), `/pause/thoughts` (Liste),
+  `/pause/thoughts/:recordId` (Editor), `/pause/denkfehler` (Katalog,
+  angezeigt als „Systematische Denkfehler"), `/pause/debug` (rohe Prüfseite
   auf der Datenschicht, nirgends verlinkt).
 
-### Klarblick: Darstellung
+### Innehalten: Darstellung
 - **Die Modulseite ist eine reine Auswahl.** Zwei Kacheln aus derselben
   `ModuleCard` wie die Startseite der App – wer die App kennt, weiß hier
   sofort, was zu tun ist. Kein Einleitungstext, kein Hinweiskasten, keine
   Zahlen: ein Text, der bei jedem Öffnen dasteht, wird nach dem zweiten Mal
-  nicht mehr gelesen. Der Hinweis auf die fehlende Zugangskontrolle steht auf
-  der Protokoll-Liste, also dort, wo Inhalte entstehen.
-- **Die Modulfarbe ist Blau** (`CLARITY_COLOR` in `lib/appearance.js`).
+  nicht mehr gelesen.
+- **Auch die Protokoll-Liste trägt keinen Hinweiskasten mehr.** Dort stand eine
+  Warnung zur fehlenden Zugangskontrolle; sie ist am 05.08.2026 entfernt worden
+  und gehört nicht zurück. Aus demselben Grund wie oben: sie stand bei jedem
+  Öffnen da, sagte immer dasselbe und war nach dem zweiten Mal unsichtbar. Die
+  Sachlage ändert sich dadurch nicht – sie steht unter „Datenschutz", und der
+  Login bleibt das nächste Vorhaben.
+- **Der Denkfehler-Katalog benutzt dieselben Bausteine wie die
+  Protokoll-Kachel**, damit man ihn ohne Umgewöhnung liest: das **Beispiel**
+  steht als Zitat hinter einem schmalen neutralen Strich (wie der Gedanke), die
+  **Frage** auf gedeckter Fläche hinter einem kräftigen Balken in der
+  Modulfarbe (wie der Vorsatz). Dazu die Nummer des Blattes als Kreis in der
+  Modulfarbe und ein Rahmen in der Modulfarbe am ausgewählten Eintrag. Die
+  Frage trägt **keine Beschriftung und kein Zeichen** – sie endet auf ein
+  Fragezeichen und steht allein in ihrem Feld; ein Wort „Frage" davor sagt
+  nichts, was der Satz nicht selbst sagt.
+- **Die Modulfarbe ist Blau** (`PAUSE_COLOR` in `lib/appearance.js`).
   Denselben Wert tragen zwei weitere Stellen, weil sie nichts aus einem Feature
   importieren sollen bzw. können: `lib/modules.js` als Literal und
-  `styles/global.scss` als `--clarity-accent`, `--clarity-accent-light`,
-  `--clarity-accent-light-color` für die SCSS-Module des Moduls. Beim
+  `styles/global.scss` als `--pause-accent`, `--pause-accent-light`,
+  `--pause-accent-light-color` für die SCSS-Module des Moduls. Beim
   Farbwechsel alle drei anfassen – im Modul selbst steht kein Farbname mehr.
   **Die Farbe hängt nie von einem Wert ab** – ein Regler auf 90 ist genauso
   blau wie einer auf 10. Rot bleibt Fehlern und der Komplettlöschung
   vorbehalten. Blau ist zugleich die Primärfarbe der App und die Farbe des
-  Smart-Home-Moduls; Klarblick sticht damit nicht heraus, sondern liegt ruhig
+  Smart-Home-Moduls; Innehalten sticht damit nicht heraus, sondern liegt ruhig
   im Farbklang der App.
 - **Die Fußleiste des Editors klebt bündig am unteren Bildschirmrand.** Drei
   Dinge gehören dafür zusammen (siehe `.footer` in ThoughtRecord.module.scss):
@@ -739,6 +768,44 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   Gruppen getrennt. Gruppenweise umbrochen entstanden zwischen den Zeilen
   unterschiedlich große Lücken, die aussahen, als fehlte dort etwas. Die
   Gruppierung in `emotions.js` bestimmt nur noch die Reihenfolge.
+
+## Kopfzeile und Navigation
+- **Links der Weg zurück, rechts der Weg ins Menü.** Auf jeder Seite außer der
+  Übersicht steht links ein Zurück-Pfeil (`BackButton`), rechts der
+  Burger-Knopf (weiterhin nur auf schmalen Bildschirmen – auf breiten steht die
+  Navigation ohnehin offen). Auf der Übersicht sitzt links das Haus-Zeichen.
+- **Der Pfeil verhält sich wie die Zurück-Taste des Handys** (`navigate(-1)`)
+  und geht damit auch die Zustände mit, die absichtlich in der URL stehen
+  (`?schritt=` im Gedankenprotokoll, `?preview=` in der Dateiablage). Ein Pfeil,
+  der etwas anderes täte als die Systemtaste daneben, wäre nicht vorhersagbar.
+  Ohne Verlauf (Deep-Link, geteilte Datei, frisch geöffnete PWA) verließe
+  `navigate(-1)` die App; dann geht es über `parentPath()` ein Segment nach
+  oben, und zwar per `replace` – ein Push landete als Verlaufseintrag und der
+  nächste Klick lief zurück auf dieselbe Seite. Erkannt wird das an
+  `history.state.idx` (von React Router gesetzt), gelesen erst im Klick.
+- `lib/backTarget.js` ist frei von React und Router – dieselbe Trennung wie bei
+  `deviceModel.js`, damit sich die Zuordnung in Node prüfen lässt.
+- **Der Name „Smart Home" steht mittig und rührt sich nicht.** Die beiden
+  Seiten der Kopfzeile teilen den Platz zu gleichen Teilen (`.headerSide`,
+  `flex: 1 1 0`), der Name behält seine natürliche Breite. Deshalb bleibt er
+  stehen, egal was daneben erscheint oder verschwindet – Pfeil oder Haus,
+  Burger oder nichts. Neben dem Zurück-Pfeil geführt sprang er bei jedem
+  Seitenwechsel um dessen Breite. Nicht wieder in die linke Gruppe ziehen.
+- **Die beschrifteten Zurück-Knöpfe innerhalb der Seiten sind entfernt**, wo
+  der Header-Pfeil dasselbe tut: „← Innehalten" stand am Anfang von
+  `DistortionsPage` und `ThoughtRecordsPage` und ist am 05.08.2026 raus. Sie
+  gehören nicht zurück – zwei Wege zurück auf einem Bildschirm sind einer zu
+  viel. Die Schrittleiste im Editor („Zurück"/„Weiter") ist etwas anderes und
+  bleibt: sie blättert innerhalb des Protokolls.
+- **Einstellungen sind kein Modul** (`/settings`, `features/settings/`): nur
+  über das Zahnrad unten im Menü erreichbar, keine Kachel auf der Startseite und
+  kein Eintrag in `lib/modules.js`. Sie sind kein Ort, an dem man etwas tut,
+  sondern einer, an dem man etwas einmal einstellt.
+- Das Farbschema saß bis zum 05.08.2026 als Umschalter im Header
+  (`ColorSchemeToggle`, entfernt) und steht jetzt dort. Als Seite lässt sich die
+  dritte Möglichkeit anbieten, die ein Umschalter nicht abbilden kann: dem
+  System folgen (`auto`). Gelesen wird `colorScheme` (die Wahl), nicht
+  `useComputedColorScheme` (das Ergebnis).
 
 ## Feature-Aufbau
 - Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`

@@ -1,0 +1,47 @@
+/**
+ * Der Denkfehler-Katalog.
+ *
+ * Die Bausteine sind dieselben wie auf der Protokoll-Kachel
+ * (ThoughtRecordCard.module.scss): ein Zitat steht hinter einem schmalen
+ * neutralen Strich, das Wichtigste hinter einem kräftigen Balken in der
+ * Modulfarbe auf gedeckter Fläche. Wer die Protokolle kennt, liest den Katalog
+ * ohne Umgewöhnung.
+ *
+ * Farbe kommt ausschließlich aus `--pause-accent…` (global.scss). Im Modul
+ * selbst steht kein Farbname – beim Farbwechsel wird nur an den drei bekannten
+ * Stellen angefasst.
+ */
+
+// Der ausgewählte Eintrag ist am Rahmen zu erkennen, nicht nur am fetten Wort.
+// In der Auswahl im Protokoll steht sonst nur ein Haken weit links, während
+// der Eintrag selbst aussieht wie jeder andere.
+.chosen {
+  border-color: var(--pause-accent);
+}
+
+// Das Beispiel ist ein zitierter Gedanke und wird genauso gesetzt wie der
+// Gedanke auf der Protokoll-Kachel: eingerückt hinter einem Strich, kursiv,
+// ohne eigene Farbe.
+.example {
+  padding-left: px-to-rem(10px);
+  border-left: px-to-rem(2px) solid var(--mantine-color-default-border);
+  font-style: italic;
+}
+
+/**
+ * Die Frage – das Einzige im Katalog, mit dem man selbst etwas tut.
+ *
+ * Derselbe Aufbau wie der Vorsatz auf der Protokoll-Kachel: kräftiger Balken
+ * links, gedeckte Fläche. Die Beschreibung sagt, was das Muster ist; die Frage
+ * ist die Übung. Sie darf deshalb nicht wie der dritte graue Absatz aussehen.
+ *
+ * Ohne Beschriftung und ohne Zeichen: der Satz endet auf ein Fragezeichen und
+ * steht allein in seinem Feld. Ein Wort „Frage" darüber sagt nichts dazu.
+ */
+.question {
+  margin-top: px-to-rem(4px);
+  padding: px-to-rem(10px) px-to-rem(12px);
+  border-left: px-to-rem(4px) solid var(--pause-accent);
+  border-radius: 0 var(--mantine-radius-sm) var(--mantine-radius-sm) 0;
+  background: var(--pause-accent-light);
+}

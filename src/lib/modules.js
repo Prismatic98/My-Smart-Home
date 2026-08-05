@@ -1,4 +1,4 @@
-import { IconBulb, IconCompass, IconFolders, IconNotes } from '@tabler/icons-react';
+import { IconBulb, IconFolders, IconNotes, IconRibbonHealth } from '@tabler/icons-react';
 
 /**
  * Einzige Quelle der Wahrheit für die Module.
@@ -29,15 +29,20 @@ export const modules = [
     color: 'blue',
   },
   {
-    // Route und Code heißen 'clarity', angezeigt wird 'Klarblick'. Im gesamten
+    // Route und Code heißen 'pause', angezeigt wird 'Innehalten'. Im gesamten
     // Modul kommen die Wörter Therapie, Störung, Symptom, Patient und
     // Behandlung nicht vor – die App wird in der Bahn und im Büro geöffnet.
-    key: 'clarity',
-    path: '/clarity',
-    label: 'Klarblick',
-    icon: IconCompass,
-    // Muss zu CLARITY_COLOR in features/clarity/lib/appearance.js passen.
+    key: 'pause',
+    path: '/pause',
+    label: 'Innehalten',
+    icon: IconRibbonHealth,
+    // Muss zu PAUSE_COLOR in features/pause/lib/appearance.js passen.
     // Als Literal, weil die Modulliste nichts aus einem Feature importiert.
-    color: 'blue',
+    //
+    // Die Stufe .5 ist derselbe helle Ton, den „Nachher" im Gedankenprotokoll
+    // trägt (LIGHT in components/BeforeAfter.jsx). Eine Abstufung derselben
+    // Modulfarbe, kein zweiter Farbname – wird dort die Stufe geändert, gehört
+    // sie hier mit geändert.
+    color: 'blue.5',
   },
 ];

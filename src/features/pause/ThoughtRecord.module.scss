@@ -1,0 +1,64 @@
+.page {
+  // Begrenzte Zeilenlänge: hier wird gelesen und geschrieben, nicht bedient.
+  max-width: px-to-rem(680px);
+}
+
+// Die Frage trägt den Schritt. Sie steht mit Luft darüber und darunter, damit
+// beim Blättern zuerst sie gelesen wird und nicht das erste Eingabefeld.
+.header {
+  margin: var(--mantine-spacing-xl) 0 var(--mantine-spacing-lg);
+}
+
+.question {
+  font-size: px-to-rem(24px);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+
+  @media (min-width: $mantine-breakpoint-sm) {
+    font-size: px-to-rem(28px);
+  }
+}
+
+// Die eigenen Gedanken als Zitat: eingerückte Marke statt Anführungszeichen,
+// gedeckte Fläche statt Rahmen in Signalfarbe. Sie sind der Gegenstand der
+// Arbeit, keine Warnung.
+.recap {
+  background: var(--pause-accent-light);
+  border-color: transparent;
+}
+
+.recapLine {
+  padding-left: px-to-rem(10px);
+  border-left: px-to-rem(2px) solid var(--pause-accent);
+  font-style: italic;
+}
+
+/**
+ * Die Fußleiste klebt am unteren Bildschirmrand.
+ *
+ * Drei Dinge, die vorher fehlten:
+ *
+ * 1. `bottom` zieht die Leiste um die Innenabstände der AppShell nach unten,
+ *    sonst bliebe sie diese Strecke über dem Rand stehen. Aus demselben Grund
+ *    darf der Container darunter KEIN `pb` haben: ein sticky-Element kommt nie
+ *    tiefer als der Inhaltsbereich seines Elternteils, ein Innenabstand unten
+ *    hielte es also genauso weit oben.
+ * 2. `z-index` legt sie über die Regler. Zwei Teile eines Reglers liegen sonst
+ *    darüber: die Beschriftungen der Skalenenden (absolut unter der Schiene)
+ *    und der Griff selbst – Mantine gibt ihm `z-index: 3`. Der Wert hier muss
+ *    also größer sein als 3; er ist mit Abstand gewählt, damit die nächste
+ *    Mantine-Version ihn nicht wieder überholt.
+ * 3. Die negativen Ränder plus derselbe Innenabstand lassen den Hintergrund
+ *    über die volle Breite laufen – ohne das schimmerte der Inhalt links und
+ *    rechts an der Leiste vorbei.
+ */
+.footer {
+  position: sticky;
+  bottom: calc(-1 * var(--app-shell-padding, 0px));
+  z-index: 20;
+  margin: 0 calc(-1 * var(--app-shell-padding, 0px));
+  padding: var(--mantine-spacing-sm) var(--app-shell-padding, 0px)
+    calc(var(--mantine-spacing-sm) + var(--app-shell-padding, 0px));
+  background: var(--mantine-color-body);
+  border-top: px-to-rem(1px) solid var(--mantine-color-default-border);
+}

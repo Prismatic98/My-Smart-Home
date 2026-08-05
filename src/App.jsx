@@ -6,11 +6,12 @@ import NotesPage from './features/notes/NotesPage.jsx';
 import FilesPage from './features/files/FilesPage.jsx';
 import SmartHomePage from './features/smarthome/SmartHomePage.jsx';
 import DeviceDetailPage from './features/smarthome/DeviceDetailPage.jsx';
-import ClarityHomePage from './features/clarity/ClarityHomePage.jsx';
-import ThoughtRecordsPage from './features/clarity/ThoughtRecordsPage.jsx';
-import ThoughtRecordPage from './features/clarity/ThoughtRecordPage.jsx';
-import DistortionsPage from './features/clarity/DistortionsPage.jsx';
-import ClarityDebugPage from './features/clarity/ClarityDebugPage.jsx';
+import PauseHomePage from './features/pause/PauseHomePage.jsx';
+import ThoughtRecordsPage from './features/pause/ThoughtRecordsPage.jsx';
+import ThoughtRecordPage from './features/pause/ThoughtRecordPage.jsx';
+import DistortionsPage from './features/pause/DistortionsPage.jsx';
+import PauseDebugPage from './features/pause/PauseDebugPage.jsx';
+import SettingsPage from './features/settings/SettingsPage.jsx';
 
 export default function App() {
   return (
@@ -25,16 +26,19 @@ export default function App() {
         <Route path="smart-home/:deviceId" element={<DeviceDetailPage />} />
         {/* Die Modulseite ist eine reine Auswahl – dieselben Kacheln wie auf
             der Startseite der App. */}
-        <Route path="clarity" element={<ClarityHomePage />} />
-        <Route path="clarity/thoughts" element={<ThoughtRecordsPage />} />
+        <Route path="pause" element={<PauseHomePage />} />
+        <Route path="pause/thoughts" element={<ThoughtRecordsPage />} />
         {/* Wie bei der Gerätedetailseite eine echte Route: der mehrstufige
             Editor hält den Schritt in der URL, damit die Zurück-Taste einen
             Schritt zurückgeht statt das Protokoll zu verlassen. */}
-        <Route path="clarity/thoughts/:recordId" element={<ThoughtRecordPage />} />
-        <Route path="clarity/denkfehler" element={<DistortionsPage />} />
+        <Route path="pause/thoughts/:recordId" element={<ThoughtRecordPage />} />
+        <Route path="pause/denkfehler" element={<DistortionsPage />} />
         {/* Rohe Prüfseite auf der Datenschicht – kein Teil der Oberfläche,
             aber der schnellste Weg, Sync und Bestand zu sehen. */}
-        <Route path="clarity/debug" element={<ClarityDebugPage />} />
+        <Route path="pause/debug" element={<PauseDebugPage />} />
+        {/* Einstellungen sind kein Modul: nur über das Zahnrad unten im
+            Menü erreichbar, keine Kachel auf der Startseite. */}
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

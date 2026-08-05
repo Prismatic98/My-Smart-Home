@@ -102,14 +102,14 @@ function migrate(db) {
     CREATE INDEX IF NOT EXISTS idx_note_images_note ON note_images (noteId);
   `);
 
-  migrateClarity(db);
+  migratePause(db);
 }
 
 /**
- * Schema des Klarblick-Moduls.
+ * Schema des Innehalten-Moduls.
  *
  * EINE Tabelle für alle sieben Datenarten, und der Inhalt steht undurchsichtig
- * in `payload`. Die Begründung steht ausführlich in clarity/repository.js;
+ * in `payload`. Die Begründung steht ausführlich in pause/repository.js;
  * kurz: was der Server nicht in Spalten hat, kann er nicht indizieren, nicht
  * durchsuchen und nicht versehentlich in ein Log schreiben.
  *
@@ -121,9 +121,29 @@ function migrate(db) {
  * verwechselt werden: `updatedAt` kommt vom Client und entscheidet Konflikte,
  * `serverUpdatedAt` setzt der Server und ist die Grundlage für `since`.
  */
-function migrateClarity(db) {
+function migratePause(db) {
+  /**
+   * Das Modul hieß bis zum 05.08.2026 „Klarblick" und seine Tabelle
+   * `clarity_records`. Umbenennen statt neu anlegen: die Zeilen sind dieselben,
+   * und ein zweites Mal von vorn anzufangen hieße, dass die Geräte ihren
+   * Bestand nicht mehr wiederfinden. Der alte Index verschwindet mit der
+   * Tabelle nicht, weshalb er unten ohnehin unter neuem Namen entsteht.
+   */
+  const tables = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?)")
+    .all('clarity_records', 'pause_records')
+    .map((row) => row.name);
+  // Nur umbenennen, wenn das Ziel noch nicht da ist: ALTER TABLE bricht sonst
+  // ab und der Server käme nicht mehr hoch.
+  if (tables.includes('clarity_records') && !tables.includes('pause_records')) {
+    db.exec(`
+      DROP INDEX IF EXISTS idx_clarity_server_updated_at;
+      ALTER TABLE clarity_records RENAME TO pause_records;
+    `);
+  }
+
   db.exec(`
-    CREATE TABLE IF NOT EXISTS clarity_records (
+    CREATE TABLE IF NOT EXISTS pause_records (
       id              TEXT    PRIMARY KEY,
       kind            TEXT    NOT NULL,
       payload         TEXT    NOT NULL DEFAULT '{}',
@@ -133,8 +153,8 @@ function migrateClarity(db) {
       serverUpdatedAt INTEGER NOT NULL
     );
 
-    CREATE INDEX IF NOT EXISTS idx_clarity_server_updated_at
-      ON clarity_records (serverUpdatedAt);
+    CREATE INDEX IF NOT EXISTS idx_pause_server_updated_at
+      ON pause_records (serverUpdatedAt);
   `);
 }
 

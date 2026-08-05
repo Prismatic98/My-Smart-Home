@@ -1,5 +1,17 @@
 .brand {
   letter-spacing: -0.01em;
+  // Der Name behält seine natürliche Breite; das Zentrieren übernehmen die
+  // beiden gleich breiten Seiten.
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+// Die beiden Seiten der Kopfzeile. Gleiche Breite unabhängig vom Inhalt –
+// damit der Name in der Mitte auch dann mittig steht, wenn nur auf einer
+// Seite ein Knopf sitzt.
+.headerSide {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .navLink {

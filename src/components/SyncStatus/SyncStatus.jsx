@@ -11,8 +11,8 @@ import { formatDateTime, formatRelativeDateTime } from '../../lib/formatDate.js'
  * wird es sichtbarer – und bietet dann einen Knopf zum erneuten Versuch.
  *
  * Steht in src/components und nicht in einem Feature-Ordner, weil inzwischen
- * zwei Module einen eigenen Sync haben (Notizen, Klarblick). Geteilt wird
- * ausschließlich die Anzeige: die Zustände (`useNotesSync`, `useClaritySync`)
+ * zwei Module einen eigenen Sync haben (Notizen, Innehalten). Geteilt wird
+ * ausschließlich die Anzeige: die Zustände (`useNotesSync`, `usePauseSync`)
  * bleiben getrennt, damit ein Fehler im einen Modul den anderen nicht
  * mitbetrifft.
  */
