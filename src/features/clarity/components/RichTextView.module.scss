@@ -1,0 +1,24 @@
+// Abstände zwischen den Blöcken, aber nicht davor und dahinter: die Anzeige
+// steht in Karten, deren Innenabstand schon stimmt.
+.paragraph,
+.list {
+  margin: 0;
+
+  + .paragraph,
+  + .list {
+    margin-top: px-to-rem(6px);
+  }
+}
+
+// Zeilenumbrüche aus dem Editor (Umschalt+Enter) bleiben erhalten.
+.paragraph {
+  white-space: pre-wrap;
+}
+
+.list {
+  padding-left: px-to-rem(20px);
+
+  li + li {
+    margin-top: px-to-rem(2px);
+  }
+}

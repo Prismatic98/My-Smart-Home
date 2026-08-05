@@ -201,7 +201,7 @@ export default function ThoughtRecordsPage() {
             key: 'new',
             label: 'Neues Protokoll',
             icon: IconNotebook,
-            color: 'teal',
+            color: 'indigo',
             onClick: startNew,
           },
         ]}

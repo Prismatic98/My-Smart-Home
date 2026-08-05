@@ -58,7 +58,7 @@ export default function EmotionsEditor({ emotions = [], phase = 'before', onChan
               {emotion.label}
             </Text>
 
-            <BeforeAfter before={emotion.intensityBefore} after={emotion.intensityAfter} />
+            <BeforeAfter before={emotion.intensityBefore} after={emotion.intensityAfter} mb="xs" />
 
             <ScaleSlider
               label="Wie stark ist es jetzt?"

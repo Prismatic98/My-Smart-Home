@@ -1,0 +1,46 @@
+// Ein Rich-Text-Feld soll wie ein gewöhnliches Eingabefeld aussehen: gleicher
+// Rahmen, gleicher Radius, gleicher Fokusring. Ohne das fiele es zwischen den
+// übrigen Formularen der App als Fremdkörper auf.
+.editor {
+  border-color: var(--mantine-color-default-border);
+
+  &:focus-within {
+    border-color: var(--clarity-accent);
+  }
+}
+
+.content {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  line-height: 24px; // muss zu LINE in RichTextField.jsx passen
+
+  &:focus {
+    outline: none;
+  }
+
+  p {
+    margin: 0;
+
+    + p {
+      margin-top: px-to-rem(6px);
+    }
+  }
+
+  ul,
+  ol {
+    margin: px-to-rem(6px) 0;
+    padding-left: px-to-rem(20px);
+  }
+
+  li p {
+    margin: 0;
+  }
+
+  // Der Platzhalter der Placeholder-Erweiterung – wie im Notizen-Editor.
+  p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--mantine-color-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+}

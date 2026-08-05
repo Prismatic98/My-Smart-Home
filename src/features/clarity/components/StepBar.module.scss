@@ -23,7 +23,7 @@
   }
 
   &:focus-visible {
-    outline: px-to-rem(2px) solid var(--mantine-primary-color-filled);
+    outline: px-to-rem(2px) solid var(--clarity-accent);
     outline-offset: px-to-rem(-2px);
   }
 }
@@ -48,8 +48,8 @@
   }
 
   .step[data-current] & {
-    border-color: var(--mantine-primary-color-filled);
-    background: var(--mantine-primary-color-filled);
+    border-color: var(--clarity-accent);
+    background: var(--clarity-accent);
     color: var(--mantine-color-white);
   }
 }

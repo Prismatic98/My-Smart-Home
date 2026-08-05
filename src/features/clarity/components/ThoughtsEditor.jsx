@@ -1,9 +1,12 @@
-import { ActionIcon, Button, Card, Group, Stack, Text, Textarea } from '@mantine/core';
+import { ActionIcon, Box, Button, Card, Group, Stack, Text } from '@mantine/core';
 import { IconPlus, IconX } from '@tabler/icons-react';
 
 import { HELP_TEXTS } from '../content/prompts.js';
+import { isRichTextEmpty } from '../lib/richText.js';
 import { newThought } from '../model.js';
 import BeforeAfter from './BeforeAfter.jsx';
+import RichTextField from './RichTextField.jsx';
+import RichTextView from './RichTextView.jsx';
 import ScaleSlider from './ScaleSlider.jsx';
 
 /**
@@ -29,7 +32,7 @@ export default function ThoughtsEditor({ thoughts = [], phase = 'before', onChan
   }
 
   if (phase === 'after') {
-    const withText = thoughts.filter((thought) => thought.text.trim().length > 0);
+    const withText = thoughts.filter((thought) => !isRichTextEmpty(thought.text));
 
     if (withText.length === 0) {
       return (
@@ -43,11 +46,11 @@ export default function ThoughtsEditor({ thoughts = [], phase = 'before', onChan
       <Stack gap="md">
         {withText.map((thought) => (
           <Card key={thought.id} withBorder radius="md" padding="md">
-            <Text size="sm" mb="xs">
-              {thought.text}
-            </Text>
+            <Box mb="xs">
+              <RichTextView value={thought.text} />
+            </Box>
 
-            <BeforeAfter before={thought.beliefBefore} after={thought.beliefAfter} />
+            <BeforeAfter before={thought.beliefBefore} after={thought.beliefAfter} mb="xs" />
 
             <ScaleSlider
               label="Wie sehr glaube ich ihm jetzt?"
@@ -65,14 +68,15 @@ export default function ThoughtsEditor({ thoughts = [], phase = 'before', onChan
       {thoughts.map((thought) => (
         <Card key={thought.id} withBorder radius="md" padding="md">
           <Group align="flex-start" wrap="nowrap" gap="xs" mb="sm">
-            <Textarea
-              value={thought.text}
-              onChange={(event) => replace(thought.id, { text: event.currentTarget.value }, false)}
-              placeholder="Der Gedanke oder das innere Bild, so wie es kam"
-              autosize
-              minRows={2}
-              style={{ flex: 1 }}
-            />
+            <Box style={{ flex: 1, minWidth: 0 }}>
+              <RichTextField
+                value={thought.text}
+                onValueChange={(text) => replace(thought.id, { text }, false)}
+                placeholder="Der Gedanke oder das innere Bild, so wie es kam"
+                minRows={2}
+                ariaLabel="Der Gedanke"
+              />
+            </Box>
 
             <ActionIcon
               variant="subtle"

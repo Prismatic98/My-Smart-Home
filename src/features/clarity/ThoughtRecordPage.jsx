@@ -26,13 +26,15 @@ import {
 import ConfirmDeleteModal from './components/ConfirmDeleteModal.jsx';
 import DistortionList from './components/DistortionList.jsx';
 import EmotionsEditor from './components/EmotionsEditor.jsx';
-import ListTextarea from './components/ListTextarea.jsx';
 import ResponseQuestions from './components/ResponseQuestions.jsx';
+import RichTextField from './components/RichTextField.jsx';
+import RichTextView from './components/RichTextView.jsx';
 import ScaleSlider from './components/ScaleSlider.jsx';
 import StepBar from './components/StepBar.jsx';
 import ThoughtsEditor from './components/ThoughtsEditor.jsx';
 import { HELP_TEXTS } from './content/prompts.js';
 import { CLARITY_COLOR } from './lib/appearance.js';
+import { isRichTextEmpty } from './lib/richText.js';
 import {
   THOUGHT_STEPS,
   clampStepIndex,
@@ -173,7 +175,7 @@ export default function ThoughtRecordPage() {
       <Stack gap="lg" pb="xl">
         {current.key === 'situation' && (
           <>
-            <ListTextarea
+            <RichTextField
               label="Die Situation"
               placeholder="Wo, mit wem, was ist geschehen — so, wie du es jemandem erzählen würdest"
               value={draft.situation ?? ''}
@@ -193,7 +195,7 @@ export default function ThoughtRecordPage() {
               }
             />
 
-            <ListTextarea
+            <RichTextField
               label="Hat dein Körper etwas gemacht?"
               description="Herzklopfen, Wärme im Gesicht, enger Hals — wenn dir etwas aufgefallen ist."
               value={draft.bodySensations ?? ''}
@@ -247,7 +249,7 @@ export default function ThoughtRecordPage() {
               onBlur={flush}
             />
 
-            <ListTextarea
+            <RichTextField
               label="Und zusammengenommen?"
               description={HELP_TEXTS.response}
               value={draft.response ?? ''}
@@ -279,7 +281,7 @@ export default function ThoughtRecordPage() {
               onChangeNow={(next) => setNow({ emotions: next })}
             />
 
-            <ListTextarea
+            <RichTextField
               label="Was tue ich jetzt?"
               description="Was du dir vornimmst — oder schon getan hast."
               value={draft.nextStep ?? ''}
@@ -358,22 +360,23 @@ export default function ThoughtRecordPage() {
  * welche Fassung gerade gilt.
  */
 function ThoughtsRecap({ thoughts }) {
-  const withText = thoughts.filter((thought) => thought.text.trim().length > 0);
+  const withText = thoughts.filter((thought) => !isRichTextEmpty(thought.text));
   if (withText.length === 0) return null;
 
   return (
-    <Card withBorder radius="md" padding="sm" mb="lg" className={classes.recap}>
-      <Stack gap={6}>
+    <Card withBorder radius="md" padding="md" mb="lg" className={classes.recap}>
+      {/* Luft zwischen den Zitaten: dicht untereinander verschwimmen zwei
+          Gedanken zu einem Absatz, und genau das sollen sie nicht. */}
+      <Stack gap="md">
         {withText.map((thought) => (
-          <Text key={thought.id} size="sm" className={classes.recapLine}>
-            {thought.text}
+          <div key={thought.id} className={classes.recapLine}>
+            <RichTextView value={thought.text} />
             {thought.beliefBefore != null && (
-              <Text span size="xs" c="dimmed">
-                {'  '}
-                {thought.beliefBefore}
+              <Text size="xs" c="dimmed" mt={4}>
+                geglaubt {thought.beliefBefore}
               </Text>
             )}
-          </Text>
+          </div>
         ))}
       </Stack>
     </Card>

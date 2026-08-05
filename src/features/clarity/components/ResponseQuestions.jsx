@@ -1,7 +1,7 @@
 import { Card, Stack, Text } from '@mantine/core';
 
 import { RESPONSE_QUESTIONS } from '../content/prompts.js';
-import ListTextarea from './ListTextarea.jsx';
+import RichTextField from './RichTextField.jsx';
 import classes from './ResponseQuestions.module.scss';
 
 /**
@@ -13,8 +13,9 @@ import classes from './ResponseQuestions.module.scss';
  * geprüft, dass man ihm widerspricht, sondern dadurch, dass man ihn diesen
  * sechs Fragen aussetzt.
  *
- * Jedes Feld setzt Aufzählungen fort (ListTextarea) – bei „was spricht dafür,
- * was dagegen" schreibt man untereinander und nicht in Sätzen.
+ * Jedes Feld ist ein Rich-Text-Feld: bei „was spricht dafür, was dagegen"
+ * schreibt man untereinander und nicht in Sätzen, und „- " wird dabei zu einer
+ * echten Aufzählung.
  *
  * Es gibt **keine Pflichtangabe und keine Zählung**, wie viele beantwortet
  * sind. Sichtbar nebeneinander zu stehen genügt; eine App, die vollständige
@@ -22,7 +23,9 @@ import classes from './ResponseQuestions.module.scss';
  */
 export default function ResponseQuestions({ answers = {}, onChange, onBlur }) {
   return (
-    <Stack gap="md">
+    // Luft zwischen den Fragen: sechs Karten dicht untereinander sehen wie ein
+    // Formular aus, das abzuarbeiten ist.
+    <Stack gap="lg">
       {RESPONSE_QUESTIONS.map((question, index) => (
         <Card key={question.id} withBorder radius="md" padding="md" className={classes.card}>
           <Text size="sm" fw={500} mb={8} className={classes.question}>
@@ -30,13 +33,13 @@ export default function ResponseQuestions({ answers = {}, onChange, onBlur }) {
             {question.text}
           </Text>
 
-          <ListTextarea
+          <RichTextField
             value={answers[question.id] ?? ''}
             onValueChange={(text) => onChange({ ...answers, [question.id]: text })}
             onBlur={onBlur}
             placeholder="…"
             minRows={2}
-            aria-label={question.text}
+            ariaLabel={question.text}
           />
         </Card>
       ))}

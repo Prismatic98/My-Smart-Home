@@ -23,13 +23,13 @@
 // gedeckte Fläche statt Rahmen in Signalfarbe. Sie sind der Gegenstand der
 // Arbeit, keine Warnung.
 .recap {
-  background: var(--mantine-color-green-light);
+  background: var(--clarity-accent-light);
   border-color: transparent;
 }
 
 .recapLine {
   padding-left: px-to-rem(10px);
-  border-left: px-to-rem(2px) solid var(--mantine-color-green-filled);
+  border-left: px-to-rem(2px) solid var(--clarity-accent);
   font-style: italic;
 }
 
@@ -43,9 +43,11 @@
  *    darf der Container darunter KEIN `pb` haben: ein sticky-Element kommt nie
  *    tiefer als der Inhaltsbereich seines Elternteils, ein Innenabstand unten
  *    hielte es also genauso weit oben.
- * 2. `z-index` legt sie über die Regler. Die Beschriftungen der Skalenenden
- *    hängen absolut unter der Schiene und liefen sonst durch die Leiste
- *    hindurch.
+ * 2. `z-index` legt sie über die Regler. Zwei Teile eines Reglers liegen sonst
+ *    darüber: die Beschriftungen der Skalenenden (absolut unter der Schiene)
+ *    und der Griff selbst – Mantine gibt ihm `z-index: 3`. Der Wert hier muss
+ *    also größer sein als 3; er ist mit Abstand gewählt, damit die nächste
+ *    Mantine-Version ihn nicht wieder überholt.
  * 3. Die negativen Ränder plus derselbe Innenabstand lassen den Hintergrund
  *    über die volle Breite laufen – ohne das schimmerte der Inhalt links und
  *    rechts an der Leiste vorbei.
@@ -53,7 +55,7 @@
 .footer {
   position: sticky;
   bottom: calc(-1 * var(--app-shell-padding, 0px));
-  z-index: 2;
+  z-index: 20;
   margin: 0 calc(-1 * var(--app-shell-padding, 0px));
   padding: var(--mantine-spacing-sm) var(--app-shell-padding, 0px)
     calc(var(--mantine-spacing-sm) + var(--app-shell-padding, 0px));

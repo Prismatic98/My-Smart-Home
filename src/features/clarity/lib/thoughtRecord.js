@@ -8,6 +8,8 @@
  * nirgends zu einer Zahl verrechnet.
  */
 
+import { isRichTextEmpty } from './richText.js';
+
 /**
  * Die Schritte des Protokolls, in der Reihenfolge des Arbeitsblattes aus der
  * Sitzung. Dessen Spalten sind:
@@ -71,8 +73,16 @@ export function clampStepIndex(value) {
   return Math.min(THOUGHT_STEPS.length - 1, Math.max(0, Math.trunc(value)));
 }
 
+/**
+ * Steht in dem Feld etwas?
+ *
+ * Über den Rich-Text-Leser und nicht über `trim()`: die Felder enthalten HTML,
+ * und ein leerer Editor liefert die Zeichenkette „<p></p>". Ohne das Auslesen
+ * sähe jedes frisch angelegte Protokoll gefüllt aus – die Schrittleiste wäre
+ * durchgehend markiert und kein leerer Entwurf würde je weggeräumt.
+ */
 function filled(value) {
-  return typeof value === 'string' && value.trim().length > 0;
+  return typeof value === 'string' && !isRichTextEmpty(value);
 }
 
 /**
@@ -124,48 +134,31 @@ export function isEmptyThoughtRecord(record) {
 }
 
 /**
- * Was die Karte in der Übersicht zeigt.
+ * Was die Karte in der Übersicht zeigt: **drei Dinge, jedes ungekürzt.**
  *
- * Die Kachel ist kein Wiederfinden-Helfer mehr, sondern das Ergebnis in
- * Kurzform: der Gedanke, das Gefühl, die Antwort, der Vorsatz. Genau das ist
- * das, was man beim Durchblättern noch einmal lesen soll – ein Protokoll,
- * dessen Ertrag erst nach zwei Klicks sichtbar wird, blättert man nicht durch.
+ *   Was war los · was ist mir durch den Kopf gegangen (und wie sehr habe ich
+ *   es geglaubt, damals und jetzt) · was tue ich jetzt.
  *
- * **Zusammengestellt, nicht ausgewertet.** Hier wird nichts verrechnet, nichts
- * eingeordnet und nichts hervorgehoben, weil es „besser" geworden wäre. Die
- * Werte stehen so nebeneinander, wie sie eingetragen wurden.
+ * Das ist der Ertrag eines Protokolls. Gefühle, Denkfehler und die Antwort auf
+ * den Gedanken standen hier auch schon – aber eine Kachel, die alle sechs
+ * Schritte wiedergibt, ist keine Übersicht mehr, sondern das Protokoll noch
+ * einmal. Wer die Einzelheiten sehen will, öffnet es.
  *
- * `resolveDistortion` wird hereingereicht, damit diese Datei den Katalog nicht
- * kennen muss und React-frei prüfbar bleibt.
+ * Gekürzt wird nichts. Ein Protokoll, dessen Ergebnis nach zwei Zeilen mit „…"
+ * abbricht, liest man nicht zu Ende und öffnet man auch nicht.
+ *
+ * **Zusammengestellt, nicht ausgewertet.** Hier wird nichts verrechnet und
+ * nichts eingeordnet; die Werte stehen so da, wie sie eingetragen wurden. Die
+ * Textfelder kommen unverändert als HTML durch – zerlegt und angezeigt werden
+ * sie in der Kachel (RichTextView), damit diese Datei React-frei bleibt.
  */
-export function summarizeThoughtRecord(record, resolveDistortion) {
-  const situation = (record.situation ?? '').trim();
-  const thoughts = (record.automaticThoughts ?? []).filter((thought) => filled(thought.text));
-  const emotions = (record.emotions ?? []).filter((emotion) => filled(emotion.label));
-
-  const answers = Object.values(record.responseAnswers ?? {}).filter((answer) => filled(answer));
-  const response = filled(record.response) ? record.response.trim() : (answers[0] ?? '');
-
+export function summarizeThoughtRecord(record) {
   return {
-    headline:
-      situation.length > 0 ? firstLine(situation) : thoughts[0] ? firstLine(thoughts[0].text) : '',
-    /** Ohne Situation trägt der erste Gedanke die Überschrift – dann nicht doppelt. */
-    thoughts: situation.length > 0 ? thoughts : thoughts.slice(1),
-    emotions,
-    distortions: (record.distortionIds ?? [])
-      .map((id) => resolveDistortion?.(id))
-      .filter(Boolean),
-    /** Die Antwort auf den Gedanken; ersatzweise die erste beantwortete Hilfsfrage. */
-    response,
-    responseBelief: record.responseBelief ?? null,
-    nextStep: filled(record.nextStep) ? record.nextStep.trim() : '',
+    situation: filled(record.situation) ? record.situation : '',
+    thoughts: (record.automaticThoughts ?? []).filter((thought) => filled(thought.text)),
+    nextStep: filled(record.nextStep) ? record.nextStep : '',
     isDraft: record.status !== 'complete',
   };
-}
-
-function firstLine(text) {
-  const line = String(text).trim().split('\n')[0];
-  return line.length > 0 ? line : String(text).trim();
 }
 
 // ---------------------------------------------------------------------------

@@ -19,6 +19,20 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+// Die Farbe von Klarblick, für die SCSS-Seite. Der Farbname selbst steht in
+// `features/clarity/lib/appearance.js` (CLARITY_COLOR) und geht von dort an
+// die Mantine-Komponenten; hier stehen die drei Farbwerte, die die
+// Stylesheets des Moduls brauchen. Einmal hier statt in acht Dateien als
+// `--mantine-color-<farbe>-*`: sonst zieht ein Farbwechsel eine Suche über
+// das ganze Modul nach sich.
+//
+// **Die Farbe hängt nie von einem Wert ab** – siehe appearance.js.
+:root {
+  --clarity-accent: var(--mantine-color-blue-filled);
+  --clarity-accent-light: var(--mantine-color-blue-light);
+  --clarity-accent-light-color: var(--mantine-color-blue-light-color);
+}
+
 // Mantine setzt zwischen Beschriftung und Eingabefeld gar keinen Abstand –
 // die beiden kleben aneinander und ein Formular wirkt dadurch eng. Sechs
 // Pixel reichen, damit die Beschriftung als eigene Zeile gelesen wird.

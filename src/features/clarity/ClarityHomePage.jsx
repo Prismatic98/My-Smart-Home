@@ -2,6 +2,7 @@ import { Container, SimpleGrid } from '@mantine/core';
 import { IconBrain, IconNotebook } from '@tabler/icons-react';
 
 import ModuleCard from '../../components/ModuleCard/ModuleCard.jsx';
+import { CLARITY_COLOR } from './lib/appearance.js';
 
 /**
  * Startseite des Moduls: zwei Kacheln, sonst nichts.
@@ -20,14 +21,16 @@ const ACTIONS = [
     path: '/clarity/thoughts',
     label: 'Gedankenprotokoll',
     icon: IconNotebook,
-    color: 'green',
+    color: CLARITY_COLOR,
   },
   {
+    // Das Nachschlagewerk steht eine Nuance neben der Modulfarbe: es ist die
+    // zweite Kachel und keine zweite Art von Protokoll.
     key: 'distortions',
     path: '/clarity/denkfehler',
     label: 'Systematische Denkfehler',
     icon: IconBrain,
-    color: 'teal',
+    color: 'indigo',
   },
 ];
 

@@ -1,9 +1,28 @@
-// Zahlen nebeneinander, gedeckt. Die Zeile soll gelesen werden können, ohne
-// dass sie den Blick auf sich zieht – sie ist eine Erinnerung an den eigenen
-// früheren Wert, keine Auswertung.
-.row {
-  padding: px-to-rem(4px) px-to-rem(8px);
-  border-radius: var(--mantine-radius-sm);
-  background: var(--mantine-color-default-hover);
-  width: fit-content;
+// „Vorher" dunkel, „Nachher" hell – zwei Abstufungen derselben Modulfarbe.
+// Die Töne stehen in der Komponente, hier wird nur die Schrift geregelt.
+
+.badge {
+  text-transform: none;
+  font-weight: 500;
+  // Beide Plaketten tragen dieselbe Schriftfarbe, unabhängig von ihrem Ton.
+  // Deshalb sind auch beide Töne dunkel genug für Weiß (siehe DARK/LIGHT).
+  color: var(--mantine-color-white);
+}
+
+.label {
+  opacity: 0.85;
+}
+
+// Die Zahl trägt die Aussage und steht deshalb kräftiger daneben.
+.value {
+  margin-left: px-to-rem(6px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// Der Pfeil zeigt die Zeitfolge und soll die beiden Werte nicht überstrahlen:
+// gedeckt, waagerecht, immer gleich.
+.arrow {
+  flex: 0 0 auto;
+  color: var(--mantine-color-dimmed);
 }

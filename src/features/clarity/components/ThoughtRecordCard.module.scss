@@ -5,61 +5,77 @@
     box-shadow 150ms ease;
 
   &:hover {
-    border-color: var(--mantine-color-green-filled);
+    border-color: var(--clarity-accent);
     box-shadow: var(--mantine-shadow-xs);
   }
 }
 
+// Der ganze Inhalt der Karte ist die anklickbare Fläche und nimmt die volle
+// Breite ein – das Menü sitzt in der Kopfzeile und nicht als zweite Spalte
+// daneben.
 .body {
-  flex: 1;
-  min-width: 0; // damit lineClamp im Flex-Container greift
+  min-width: 0;
   cursor: pointer;
 
   &:focus-visible {
-    outline: px-to-rem(2px) solid var(--mantine-color-green-filled);
+    outline: px-to-rem(2px) solid var(--clarity-accent);
     outline-offset: px-to-rem(4px);
     border-radius: var(--mantine-radius-sm);
   }
 }
 
-.headline {
+.menuButton {
+  flex: 0 0 auto;
+  cursor: default;
+}
+
+// Die Situation trägt die Karte wie eine Überschrift: kräftiger und eine
+// Spur enger gesetzt. Gekürzt wird sie trotzdem nicht.
+//
+// Die Absätze und Listenpunkte werden mitgenannt, statt sich auf Vererbung zu
+// verlassen: die Anzeige baut aus dem Inhalt Mantine-`Text`-Elemente, und was
+// die an eigener Schriftstärke mitbringen, hängt an der Mantine-Version.
+.situation,
+.situation :is(p, li) {
+  font-weight: var(--mantine-font-weight-medium);
   line-height: 1.3;
 }
 
-// Der Gedanke wird zitiert, nicht behauptet.
-.thought {
-  padding-left: px-to-rem(10px);
-  border-left: px-to-rem(2px) solid var(--mantine-color-default-border);
-  font-style: italic;
+/**
+ * Der Vorsatz – das Auffälligste auf der Karte.
+ *
+ * Die gedeckte Fläche allein reichte nicht: sie hob den Bereich zwar ab,
+ * schluckte aber das Zeichen daneben, weil beide aus derselben blassen
+ * Farbfamilie kamen. Deshalb jetzt drei Dinge zusammen: ein kräftiger Balken
+ * links, das Zeichen als gefüllter Kreis (in der Komponente) und eine größere
+ * Schrift für den Text selbst.
+ */
+.nextStep {
+  // Mehr Luft als zwischen den übrigen Teilen der Karte: der Vorsatz ist
+  // nicht der nächste Absatz, sondern das, was aus dem Protokoll folgt.
+  margin-top: var(--mantine-spacing-xs);
+  padding: px-to-rem(10px) px-to-rem(12px);
+  border-left: px-to-rem(4px) solid var(--clarity-accent);
+  border-radius: 0 var(--mantine-radius-sm) var(--mantine-radius-sm) 0;
+  background: var(--clarity-accent-light);
 }
 
-.emotion {
-  text-transform: none;
+.nextStepLabel {
+  color: var(--clarity-accent-light-color);
+  letter-spacing: 0.04em;
+}
+
+.nextStepText {
   font-weight: 500;
 }
 
-// Der Zahlenwert gehört zum Gefühl, soll es aber nicht überschreien.
-.emotionValue {
-  margin-left: px-to-rem(6px);
-  opacity: 0.75;
-  font-variant-numeric: tabular-nums;
+// Der Gedanke wird zitiert, nicht behauptet: eingerückte Marke statt
+// Anführungszeichen.
+.thought {
+  padding-left: px-to-rem(10px);
+  border-left: px-to-rem(2px) solid var(--mantine-color-default-border);
 }
 
-// Die Antwort ist der Ertrag des Protokolls und bekommt als Einzige eine
-// Fläche – gedeckt in der Modulfarbe, nicht als Auszeichnung „richtig".
-.response {
-  padding: px-to-rem(8px) px-to-rem(10px);
-  border-radius: var(--mantine-radius-sm);
-  background: var(--mantine-color-green-light);
-  white-space: pre-wrap;
-}
-
-.nextStep {
-  color: var(--mantine-color-text);
-}
-
-.nextStepIcon {
-  flex: 0 0 auto;
-  margin-top: px-to-rem(3px);
-  color: var(--mantine-color-green-filled);
+.thoughtText {
+  font-style: italic;
 }

@@ -38,6 +38,6 @@ export const modules = [
     icon: IconCompass,
     // Muss zu CLARITY_COLOR in features/clarity/lib/appearance.js passen.
     // Als Literal, weil die Modulliste nichts aus einem Feature importiert.
-    color: 'green',
+    color: 'blue',
   },
 ];

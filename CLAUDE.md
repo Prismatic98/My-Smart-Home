@@ -613,13 +613,30 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   `id` der Frage (`responseAnswers`), nicht unter ihrem Index: eine Antwort
   soll ihrer Frage zugeordnet bleiben, auch wenn die Reihenfolge sich ändert.
   Keine Pflichtangabe, keine Zählung der beantworteten Fragen.
-- **Textfelder setzen Aufzählungen fort** (`ListTextarea` +
-  `lib/bulletList.js`): „- " am Zeilenanfang, Enter, und der Strich steht auf
-  der nächsten Zeile; Enter auf einem leeren Punkt beendet die Liste. Der
-  Inhalt bleibt reiner Text – kein zweiter TipTap-Editor, der HTML in die
-  Datensätze und 430 KB ins Bundle brächte, damit Striche runder aussehen.
-  Die Cursor-Logik liegt React-frei in `lib/`, weil sie sich beim Ausprobieren
-  richtig anfühlt und bei eingerückten oder leeren Zeilen daneben liegt.
+- **Alle Textfelder sind Rich-Text-Felder** (`RichTextField` →
+  `RichTextEditorField`, TipTap wie in den Notizen, per `React.lazy`).
+  „- " am Zeilenanfang wird zu einer echten Aufzählung mit Punkt, „1. " zu
+  einer nummerierten Liste – das erledigen die Eingaberegeln von TipTap, es
+  gibt dafür keinen eigenen Code mehr (der Vorgänger `ListTextarea` +
+  `lib/bulletList.js` ist entfernt).
+  - **Keine Werkzeugleiste.** Neun Felder je Protokoll mit je einer Reihe
+    Knöpfe wären lauter als der Inhalt. Fett und kursiv gehen über Strg+B/I.
+  - **Das Schema ist klein und geschlossen:** Absätze, Aufzählungen,
+    nummerierte Listen, fett, kursiv, Zeilenumbruch. Überschriften, Zitate,
+    Code, Trennlinien, Links und Bilder sind abgeschaltet. Alles, was der
+    Editor erzeugen kann, muss `RichTextView` auch anzeigen können.
+  - Damit steht in den Feldern HTML statt Klartext. Für den Abgleich ändert
+    sich nichts (`payload` ist eine undurchsichtige Zeichenkette), und es gibt
+    **keine Umwandlung in der Datenbank**: Klartext aus alten Protokollen wird
+    beim Lesen und beim Öffnen im Editor mitgedeutet.
+- **`lib/richText.js` liest dieses HTML – frei von React und vom DOM.**
+  Kein `DOMParser`: die Regeln sollen sich in Node prüfen lassen, und
+  `stepHasContent()` hängt daran (ein leeres Feld ist die Zeichenkette
+  „<p></p>", ohne Auslesen sähe jedes frische Protokoll gefüllt aus).
+  Angezeigt wird über `RichTextView`, das aus den gelesenen Blöcken
+  React-Elemente baut – **nie `dangerouslySetInnerHTML`.** Was nicht ins
+  Schema passt, fällt beim Lesen weg; ein `<script>` aus einem manipulierten
+  Abgleich kann damit nichts auslösen.
 - `ScaleSlider` ist der einzige Regler des Moduls und hält vier Regeln fest:
   die Anzeige folgt dem Finger und geschrieben wird beim Loslassen; `null`
   heißt „nicht angegeben" (nicht 0, und deshalb steht ein unberührter Regler
@@ -627,10 +644,22 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   Enden sind mit 0 und 100 beziffert und nicht mit „gar nicht"/„völlig" –
   in der Sitzung wird über Zahlen gesprochen; und die Farbe hängt nie vom
   Wert ab.
-- `BeforeAfter` zeigt im Schritt „Ergebnis" die beiden Werte nebeneinander –
-  **ohne Differenz, ohne Pfeil, ohne Farbe.** Sobald daraus „−45" würde, hätte
-  die App eine Richtung bewertet, in die es zu gehen hat, und eine Sitzung,
-  nach der die Zahl gestiegen ist, sähe aus wie ein Misserfolg.
+- `BeforeAfter` zeigt die beiden Werte als **zwei Plaketten „Vorher" und
+  „Nachher"** in der Modulfarbe – **ohne Differenz und ohne Farbe, die vom
+  Wert abhängt.** Sobald daraus „−45" würde, hätte die App eine Richtung
+  bewertet, in die es zu gehen hat, und eine Sitzung, nach der die Zahl
+  gestiegen ist, sähe aus wie ein Misserfolg.
+  - „Vorher" trägt einen dunklen, „Nachher" einen hellen Ton **derselben**
+    Modulfarbe (Abstufung, kein zweiter Farbname). Das unterscheidet die
+    **Zeitpunkte**, nicht die Werte: es sieht bei 10 genauso aus wie bei 90.
+    Beide Töne sind dunkel genug für Weiß, weil beide Plaketten dieselbe
+    Schriftfarbe tragen sollen.
+  - Der Pfeil dazwischen zeigt die **Zeitfolge**: waagerecht, gedeckt und
+    immer gleich, ob die Zahl gestiegen oder gefallen ist. Ein Pfeil nach oben
+    oder unten wäre etwas anderes und gehört nicht hierhin.
+  - Dieselbe Komponente an zwei Orten, nur `size` unterscheidet: auf der
+    Übersichtskachel eine Stufe größer (`lg`), im Schritt „Ergebnis" `md` –
+    dort stehen sie neben einem Regler und dürfen ihn nicht überschreien.
 - **Die Punkte der Schrittleiste sind kein Fortschritt.** Gefüllt heißt „hier
   steht schon etwas" und hilft beim Wiederfinden. Es wird nichts gezählt,
   nichts in Prozent umgerechnet, nichts angemahnt. Ein Protokoll mit drei
@@ -648,11 +677,28 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   Abgleich haben. Geteilt ist ausschließlich die Anzeige; die Zustände
   (`useNotesSync`, `useClaritySync`) bleiben getrennt, damit ein Fehler im
   einen Modul den anderen nicht mitbetrifft.
-- **Die Kachel in der Übersicht zeigt den Ertrag, nicht nur die Überschrift:**
-  Gedanke mit Glaubenswert vorher und jetzt, Gefühle mit Stärken, gewählte
-  Denkfehler, die Antwort, der Vorsatz. Ein Protokoll, dessen Ergebnis erst
-  nach zwei Klicks sichtbar wird, blättert man nicht durch. Leere Teile fallen
-  weg, statt als Lücke dazustehen. Deshalb auch nur zwei Spalten statt drei.
+- **Die Kachel in der Übersicht zeigt genau drei Dinge, jedes ungekürzt:** die
+  Situation als Überschrift, die automatischen Gedanken samt Glaubenswert
+  vorher und nachher, und „was ich jetzt tue" – in dieser Reihenfolge, also in
+  der des Protokolls. Gefühle, Denkfehler und die Antwort auf den Gedanken
+  standen hier auch schon und sind bewusst wieder raus – eine Kachel,
+  die alle sechs Schritte wiedergibt, ist keine Übersicht mehr, sondern das
+  Protokoll noch einmal. Gekürzt wird nichts (kein `lineClamp`): ein Ergebnis,
+  das nach zwei Zeilen mit „…" abbricht, liest man nicht zu Ende. Leere Teile
+  fallen weg, statt als Lücke dazustehen. Deshalb auch nur zwei Spalten statt
+  drei.
+- **Der Vorsatz steht am Ende und ist trotzdem das Auffälligste auf der Karte**
+  – er ist das, was aus dem Protokoll in den nächsten Tag geht; alles darüber
+  ist der Weg dorthin. Auffällig macht ihn die Gestaltung, nicht die Position.
+  Eine gedeckte Fläche allein reichte dafür nicht: sie hob den Bereich zwar ab,
+  schluckte aber das Pfeilzeichen, weil beide aus derselben blassen Farbfamilie
+  kamen. Es braucht die drei zusammen – kräftiger Balken links, gefülltes
+  Zeichen, größere Schrift.
+- **Hervorgehoben heißt sichtbar, nicht bewertet.** Das gilt für den Vorsatz
+  wie für das Wertepaar am Gedanken: hervorgehoben wird, wo etwas steht, nie
+  was dort steht. „Vorher" und „Nachher" tragen deshalb dieselbe Schrift und
+  dieselbe Schriftfarbe – keine Differenz und keine Farbe, die von der Zahl
+  abhängt.
 - Routen: `/clarity` (nur die beiden Kacheln), `/clarity/thoughts` (Liste),
   `/clarity/thoughts/:recordId` (Editor), `/clarity/denkfehler` (Katalog,
   angezeigt als „Systematische Denkfehler"), `/clarity/debug` (rohe Prüfseite
@@ -665,12 +711,17 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   Zahlen: ein Text, der bei jedem Öffnen dasteht, wird nach dem zweiten Mal
   nicht mehr gelesen. Der Hinweis auf die fehlende Zugangskontrolle steht auf
   der Protokoll-Liste, also dort, wo Inhalte entstehen.
-- **Die Modulfarbe ist Grün** (`CLARITY_COLOR` in `lib/appearance.js`, als
-  Literal auch in `lib/modules.js`). Klarblick soll sich von den übrigen
-  Modulen abheben und beim Öffnen weder nach Formular noch nach Krankenakte
-  aussehen. **Die Farbe hängt nie von einem Wert ab** – ein Regler auf 90 ist
-  genauso grün wie einer auf 10. Rot bleibt Fehlern und der Komplettlöschung
-  vorbehalten.
+- **Die Modulfarbe ist Blau** (`CLARITY_COLOR` in `lib/appearance.js`).
+  Denselben Wert tragen zwei weitere Stellen, weil sie nichts aus einem Feature
+  importieren sollen bzw. können: `lib/modules.js` als Literal und
+  `styles/global.scss` als `--clarity-accent`, `--clarity-accent-light`,
+  `--clarity-accent-light-color` für die SCSS-Module des Moduls. Beim
+  Farbwechsel alle drei anfassen – im Modul selbst steht kein Farbname mehr.
+  **Die Farbe hängt nie von einem Wert ab** – ein Regler auf 90 ist genauso
+  blau wie einer auf 10. Rot bleibt Fehlern und der Komplettlöschung
+  vorbehalten. Blau ist zugleich die Primärfarbe der App und die Farbe des
+  Smart-Home-Moduls; Klarblick sticht damit nicht heraus, sondern liegt ruhig
+  im Farbklang der App.
 - **Die Fußleiste des Editors klebt bündig am unteren Bildschirmrand.** Drei
   Dinge gehören dafür zusammen (siehe `.footer` in ThoughtRecord.module.scss):
   `bottom` zieht sie um die Innenabstände der AppShell nach unten, der
