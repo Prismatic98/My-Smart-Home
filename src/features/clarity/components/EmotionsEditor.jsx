@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { ActionIcon, Card, Chip, Group, Stack, Text, TextInput } from '@mantine/core';
 import { IconPlus, IconX } from '@tabler/icons-react';
 
-import { EMOTION_GROUPS } from '../content/emotions.js';
+import { EMOTION_LABELS } from '../content/emotions.js';
+import { CLARITY_COLOR } from '../lib/appearance.js';
 import { newEmotion } from '../model.js';
 import BeforeAfter from './BeforeAfter.jsx';
 import ScaleSlider from './ScaleSlider.jsx';
@@ -10,13 +11,15 @@ import ScaleSlider from './ScaleSlider.jsx';
 /**
  * Die Gefühle eines Protokolls – Spalte „Gefühl(e)" des Arbeitsblattes.
  *
- * Die Vorschläge sind gruppiert, weil man ein Gefühl schneller wiedererkennt
- * als benennt – gespeichert wird aber nur das Wort. Die Gruppe ist eine Hilfe
- * beim Finden und keine Einordnung des Eintrags; sie steht in keinem
- * Datensatz.
+ * Die Vorschläge stehen in **einer** fortlaufenden Reihe und nicht nach
+ * Gruppen getrennt. Gruppenweise umbrochen entstanden zwischen den Zeilen
+ * unterschiedlich große Lücken, und die sahen aus, als fehlte dort etwas.
+ * Die Reihenfolge der Wörter folgt weiterhin den Gruppen aus emotions.js –
+ * das hilft beim Finden, ohne dass es die Auswahl einordnet.
  *
- * Freitext bleibt immer möglich. Eine feste Auswahlliste hieße, dass ein
- * Gefühl, das nicht darin vorkommt, nicht eingetragen werden kann.
+ * Gespeichert wird nur das Wort. Freitext bleibt immer möglich: eine feste
+ * Auswahlliste hieße, dass ein Gefühl, das nicht darin vorkommt, nicht
+ * eingetragen werden kann.
  */
 // Anders als bei den Gedanken gibt es hier kein Freitextfeld, in dem laufend
 // getippt wird – jede Änderung ist eine Auswahl oder ein losgelassener Regler
@@ -61,8 +64,6 @@ export default function EmotionsEditor({ emotions = [], phase = 'before', onChan
               label="Wie stark ist es jetzt?"
               value={emotion.intensityAfter}
               onChange={(value) => replace(emotion.id, { intensityAfter: value })}
-              minLabel="gar nicht"
-              maxLabel="so stark wie möglich"
             />
           </Card>
         ))}
@@ -76,29 +77,26 @@ export default function EmotionsEditor({ emotions = [], phase = 'before', onChan
         <Text size="sm" fw={500} mb={6}>
           Vorschläge
         </Text>
-        <Stack gap="xs">
-          {EMOTION_GROUPS.map((entry) => (
-            <Group key={entry.group} gap={6} wrap="wrap">
-              {entry.labels.map((label) => (
-                <Chip
-                  key={label}
-                  size="xs"
-                  variant="light"
-                  checked={chosen.includes(label)}
-                  onChange={() => {
-                    if (chosen.includes(label)) {
-                      onChangeNow(emotions.filter((emotion) => emotion.label !== label));
-                    } else {
-                      add(label);
-                    }
-                  }}
-                >
-                  {label}
-                </Chip>
-              ))}
-            </Group>
+        <Group gap={6} wrap="wrap">
+          {EMOTION_LABELS.map((label) => (
+            <Chip
+              key={label}
+              size="sm"
+              variant="light"
+              color={CLARITY_COLOR}
+              checked={chosen.includes(label)}
+              onChange={() => {
+                if (chosen.includes(label)) {
+                  onChangeNow(emotions.filter((emotion) => emotion.label !== label));
+                } else {
+                  add(label);
+                }
+              }}
+            >
+              {label}
+            </Chip>
           ))}
-        </Stack>
+        </Group>
       </div>
 
       <Group align="flex-end" gap="xs" wrap="nowrap">
@@ -148,8 +146,6 @@ export default function EmotionsEditor({ emotions = [], phase = 'before', onChan
             label="Wie stark?"
             value={emotion.intensityBefore}
             onChange={(value) => replace(emotion.id, { intensityBefore: value })}
-            minLabel="gar nicht"
-            maxLabel="so stark wie möglich"
           />
         </Card>
       ))}

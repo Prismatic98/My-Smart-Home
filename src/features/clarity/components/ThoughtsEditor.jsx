@@ -53,8 +53,6 @@ export default function ThoughtsEditor({ thoughts = [], phase = 'before', onChan
               label="Wie sehr glaube ich ihm jetzt?"
               value={thought.beliefAfter}
               onChange={(value) => replace(thought.id, { beliefAfter: value }, true)}
-              minLabel="gar nicht"
-              maxLabel="völlig"
             />
           </Card>
         ))}
@@ -91,8 +89,6 @@ export default function ThoughtsEditor({ thoughts = [], phase = 'before', onChan
             description={HELP_TEXTS.belief}
             value={thought.beliefBefore}
             onChange={(value) => replace(thought.id, { beliefBefore: value }, true)}
-            minLabel="gar nicht"
-            maxLabel="völlig"
           />
         </Card>
       ))}

@@ -15,21 +15,41 @@
 
 /**
  * Die Hilfsfragen, mit denen sich eine Antwort auf den automatischen Gedanken
- * finden lässt – auf dem Arbeitsblatt stehen sie unter der Tabelle, hier
- * stehen sie im Schritt „Antwort".
+ * finden lässt – auf dem Arbeitsblatt stehen sie unter der Tabelle.
  *
- * Werden als aufklappbare Impulse angeboten; ein Antippen fügt die Frage als
- * Zwischenüberschrift in das Textfeld ein. Bewusst kein Formular mit einem
- * Feld je Frage – dann wäre es eine Pflichtübung statt einer Anregung, und
- * das Blatt hat dafür auch nur eine Spalte.
+ * Jede bekommt ein eigenes Feld und wird beantwortet, nicht nur angeboten:
+ * die Fragen sind die eigentliche Arbeit dieses Schrittes. Ein einzelnes
+ * Freitextfeld mit den Fragen als Anregung daneben führte dazu, dass zwei
+ * davon beantwortet werden und vier nie.
+ *
+ * `id` landet in `responseAnswers` und darf sich deshalb nie ändern – auch
+ * dann nicht, wenn die Formulierung überarbeitet wird.
  */
 export const RESPONSE_QUESTIONS = [
-  'Was spricht dafür, dass der Gedanke zutrifft — und was spricht dagegen?',
-  'Gibt es eine andere Erklärung für das, was passiert ist?',
-  'Was ist das Schlimmste, das passieren könnte, und käme ich damit zurecht? Was wäre das Beste? Was ist das Wahrscheinlichste?',
-  'Was ändert sich, wenn ich dem Gedanken glaube? Und was, wenn ich anders darüber denke?',
-  'Was kann ich jetzt konkret tun?',
-  'Wenn jemand, der mir wichtig ist, in dieser Lage wäre und so dächte — was würde ich ihm sagen?',
+  {
+    id: 'evidence',
+    text: 'Was spricht dafür, dass der Gedanke zutrifft — und was spricht dagegen?',
+  },
+  {
+    id: 'alternative',
+    text: 'Gibt es eine andere Erklärung für das, was passiert ist?',
+  },
+  {
+    id: 'worst',
+    text: 'Was ist das Schlimmste, das passieren könnte, und käme ich damit zurecht? Was wäre das Beste? Was ist das Wahrscheinlichste?',
+  },
+  {
+    id: 'effect',
+    text: 'Was ändert sich, wenn ich dem Gedanken glaube? Und was, wenn ich anders darüber denke?',
+  },
+  {
+    id: 'action',
+    text: 'Was kann ich jetzt konkret tun?',
+  },
+  {
+    id: 'friend',
+    text: 'Wenn jemand, der mir wichtig ist, in dieser Lage wäre und so dächte — was würde ich ihm sagen?',
+  },
 ];
 
 /** Hilfetexte, die an den jeweiligen Stellen eingeblendet werden. */

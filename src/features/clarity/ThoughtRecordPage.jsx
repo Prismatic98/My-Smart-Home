@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ActionIcon,
@@ -12,7 +12,6 @@ import {
   Skeleton,
   Stack,
   Text,
-  Textarea,
   TextInput,
   Title,
 } from '@mantine/core';
@@ -27,11 +26,13 @@ import {
 import ConfirmDeleteModal from './components/ConfirmDeleteModal.jsx';
 import DistortionList from './components/DistortionList.jsx';
 import EmotionsEditor from './components/EmotionsEditor.jsx';
+import ListTextarea from './components/ListTextarea.jsx';
+import ResponseQuestions from './components/ResponseQuestions.jsx';
 import ScaleSlider from './components/ScaleSlider.jsx';
-import SocraticImpulses from './components/SocraticImpulses.jsx';
 import StepBar from './components/StepBar.jsx';
 import ThoughtsEditor from './components/ThoughtsEditor.jsx';
 import { HELP_TEXTS } from './content/prompts.js';
+import { CLARITY_COLOR } from './lib/appearance.js';
 import {
   THOUGHT_STEPS,
   clampStepIndex,
@@ -75,7 +76,6 @@ export default function ThoughtRecordPage() {
     recordId
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const responseRef = useRef(null);
 
   const step = clampStepIndex(Number(params.get('schritt') ?? '1') - 1);
 
@@ -88,7 +88,7 @@ export default function ThoughtRecordPage() {
   async function handleDelete() {
     await deleteRecord('thoughtRecords', recordId);
     setConfirmDelete(false);
-    navigate('/clarity', { replace: true });
+    navigate('/clarity/thoughts', { replace: true });
   }
 
   if (missing) {
@@ -118,30 +118,14 @@ export default function ThoughtRecordPage() {
   const complete = draft.status === 'complete';
   const thoughts = draft.automaticThoughts ?? [];
 
-  /** Setzt eine Hilfsfrage als Zwischenüberschrift in das Antwortfeld. */
-  function insertQuestion(question) {
-    const existing = (draft.response ?? '').replace(/\s+$/, '');
-    const next = existing.length > 0 ? `${existing}\n\n${question}\n` : `${question}\n`;
-    set({ response: next });
-
-    // Der Cursor gehört hinter die Frage – sonst muss man erst hintippen,
-    // bevor man antworten kann.
-    requestAnimationFrame(() => {
-      const field = responseRef.current;
-      if (!field) return;
-      field.focus();
-      field.setSelectionRange(next.length, next.length);
-    });
-  }
-
   return (
-    <Container size="sm" px={0} pb={96} className={classes.page}>
+    <Container size="sm" px={0} className={classes.page}>
       <Group justify="space-between" align="center" wrap="nowrap" mb="sm">
         <BackLink />
 
         <Group gap="xs" wrap="nowrap">
           {complete && (
-            <Badge variant="default" size="sm">
+            <Badge variant="light" color={CLARITY_COLOR} size="sm">
               Abgeschlossen
             </Badge>
           )}
@@ -184,16 +168,17 @@ export default function ThoughtRecordPage() {
         <ThoughtsRecap thoughts={thoughts} />
       )}
 
-      <Stack gap="lg">
+      {/* Der Abstand nach unten hält den Inhalt von der Fußleiste frei, die
+          fest am unteren Rand klebt. */}
+      <Stack gap="lg" pb="xl">
         {current.key === 'situation' && (
           <>
-            <Textarea
+            <ListTextarea
               label="Die Situation"
               placeholder="Wo, mit wem, was ist geschehen — so, wie du es jemandem erzählen würdest"
               value={draft.situation ?? ''}
-              onChange={(event) => set({ situation: event.currentTarget.value })}
+              onValueChange={(text) => set({ situation: text })}
               onBlur={flush}
-              autosize
               minRows={4}
             />
 
@@ -208,13 +193,12 @@ export default function ThoughtRecordPage() {
               }
             />
 
-            <Textarea
+            <ListTextarea
               label="Hat dein Körper etwas gemacht?"
               description="Herzklopfen, Wärme im Gesicht, enger Hals — wenn dir etwas aufgefallen ist."
               value={draft.bodySensations ?? ''}
-              onChange={(event) => set({ bodySensations: event.currentTarget.value })}
+              onValueChange={(text) => set({ bodySensations: text })}
               onBlur={flush}
-              autosize
               minRows={2}
             />
           </>
@@ -257,25 +241,25 @@ export default function ThoughtRecordPage() {
 
         {current.key === 'response' && (
           <>
-            <Textarea
-              ref={responseRef}
-              label="Deine Antwort"
-              description={HELP_TEXTS.response}
-              value={draft.response ?? ''}
-              onChange={(event) => set({ response: event.currentTarget.value })}
+            <ResponseQuestions
+              answers={draft.responseAnswers ?? {}}
+              onChange={(next) => set({ responseAnswers: next })}
               onBlur={flush}
-              autosize
-              minRows={6}
             />
 
-            <SocraticImpulses onInsert={insertQuestion} />
+            <ListTextarea
+              label="Und zusammengenommen?"
+              description={HELP_TEXTS.response}
+              value={draft.response ?? ''}
+              onValueChange={(text) => set({ response: text })}
+              onBlur={flush}
+              minRows={4}
+            />
 
             <ScaleSlider
               label="Wie sehr glaube ich dieser Antwort?"
               value={draft.responseBelief}
               onChange={(value) => setNow({ responseBelief: value })}
-              minLabel="gar nicht"
-              maxLabel="völlig"
             />
           </>
         )}
@@ -295,13 +279,12 @@ export default function ThoughtRecordPage() {
               onChangeNow={(next) => setNow({ emotions: next })}
             />
 
-            <Textarea
+            <ListTextarea
               label="Was tue ich jetzt?"
               description="Was du dir vornimmst — oder schon getan hast."
               value={draft.nextStep ?? ''}
-              onChange={(event) => set({ nextStep: event.currentTarget.value })}
+              onValueChange={(text) => set({ nextStep: text })}
               onBlur={flush}
-              autosize
               minRows={2}
             />
 
@@ -314,10 +297,11 @@ export default function ThoughtRecordPage() {
               </Button>
             ) : (
               <Button
+                color={CLARITY_COLOR}
                 leftSection={<IconCheck size={16} />}
                 onClick={async () => {
                   await setNow({ status: 'complete' });
-                  navigate('/clarity');
+                  navigate('/clarity/thoughts');
                 }}
               >
                 Protokoll abschließen
@@ -327,7 +311,9 @@ export default function ThoughtRecordPage() {
         )}
       </Stack>
 
-      <Group justify="space-between" align="center" className={classes.footer} mt="xl">
+      {/* Klebt am unteren Bildschirmrand, damit Blättern immer mit dem Daumen
+          erreichbar ist – auch mitten in einem langen Schritt. */}
+      <Group justify="space-between" align="center" className={classes.footer}>
         <Button
           variant="subtle"
           color="gray"
@@ -344,6 +330,7 @@ export default function ThoughtRecordPage() {
 
         <Button
           variant="light"
+          color={CLARITY_COLOR}
           rightSection={<IconArrowRight size={16} />}
           disabled={step === THOUGHT_STEPS.length - 1}
           onClick={() => goToStep(step + 1)}
@@ -397,13 +384,13 @@ function BackLink() {
   return (
     <Button
       component={Link}
-      to="/clarity"
+      to="/clarity/thoughts"
       variant="subtle"
       color="gray"
       size="compact-sm"
       leftSection={<IconArrowLeft size={16} />}
     >
-      Klarblick
+      Gedankenprotokoll
     </Button>
   );
 }

@@ -81,7 +81,13 @@ export function emptyRecord(table, input = {}) {
 
     // Spalte „Angemessene Reaktion darauf": erst der Denkfehler (freiwillig),
     // dann die Antwort auf den Gedanken und wie sehr man ihr glaubt.
+    //
+    // `responseAnswers` sind die einzeln beantworteten Hilfsfragen, abgelegt
+    // unter deren fester `id` (content/prompts.js). Ein Objekt und keine
+    // Liste: so bleibt eine Antwort ihrer Frage zugeordnet, auch wenn die
+    // Reihenfolge sich einmal ändert oder eine Frage dazukommt.
     distortionIds: [],
+    responseAnswers: {},
     response: '',
     responseBelief: null,
 

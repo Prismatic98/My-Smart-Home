@@ -18,3 +18,28 @@ body {
 * {
   -webkit-tap-highlight-color: transparent;
 }
+
+// Mantine setzt zwischen Beschriftung und Eingabefeld gar keinen Abstand –
+// die beiden kleben aneinander und ein Formular wirkt dadurch eng. Sechs
+// Pixel reichen, damit die Beschriftung als eigene Zeile gelesen wird.
+//
+// Angesprochen werden die statischen Mantine-Klassen
+// (`mantine-{Komponente}-label`) und nicht die gehashten: die Hashes ändern
+// sich mit jeder Mantine-Version, das Namensmuster ist dokumentiert.
+// Eine Theme-Anpassung für `InputWrapper` wäre der naheliegende Weg, greift
+// aber nicht – TextInput & Co. holen ihre Wrapper-Styles unter dem eigenen
+// Komponentennamen.
+//
+// Bewusst als Aufzählung und nicht als `[class*='-label']`: die Beschriftung
+// einer Checkbox, eines Chips oder eines NavLinks heißt genauso und steht
+// dort neben dem Bedienelement, nicht darüber. Ein Abstand nach unten würde
+// die alle verschieben.
+$input-components: 'TextInput', 'Textarea', 'NumberInput', 'PasswordInput', 'Select',
+  'MultiSelect', 'NativeSelect', 'Autocomplete', 'JsonInput', 'FileInput', 'InputWrapper';
+
+@each $component in $input-components {
+  .mantine-#{$component}-label,
+  .mantine-#{$component}-description {
+    margin-bottom: px-to-rem(6px);
+  }
+}

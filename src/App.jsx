@@ -6,7 +6,8 @@ import NotesPage from './features/notes/NotesPage.jsx';
 import FilesPage from './features/files/FilesPage.jsx';
 import SmartHomePage from './features/smarthome/SmartHomePage.jsx';
 import DeviceDetailPage from './features/smarthome/DeviceDetailPage.jsx';
-import ClarityPage from './features/clarity/ClarityPage.jsx';
+import ClarityHomePage from './features/clarity/ClarityHomePage.jsx';
+import ThoughtRecordsPage from './features/clarity/ThoughtRecordsPage.jsx';
 import ThoughtRecordPage from './features/clarity/ThoughtRecordPage.jsx';
 import DistortionsPage from './features/clarity/DistortionsPage.jsx';
 import ClarityDebugPage from './features/clarity/ClarityDebugPage.jsx';
@@ -22,7 +23,10 @@ export default function App() {
         {/* Eigene Route statt Modal-State: so funktionieren Zurück-Taste und
             Deep-Links auf ein einzelnes Gerät. */}
         <Route path="smart-home/:deviceId" element={<DeviceDetailPage />} />
-        <Route path="clarity" element={<ClarityPage />} />
+        {/* Die Modulseite ist eine reine Auswahl – dieselben Kacheln wie auf
+            der Startseite der App. */}
+        <Route path="clarity" element={<ClarityHomePage />} />
+        <Route path="clarity/thoughts" element={<ThoughtRecordsPage />} />
         {/* Wie bei der Gerätedetailseite eine echte Route: der mehrstufige
             Editor hält den Schritt in der URL, damit die Zurück-Taste einen
             Schritt zurückgeht statt das Protokoll zu verlassen. */}

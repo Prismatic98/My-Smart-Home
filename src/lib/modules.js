@@ -36,6 +36,8 @@ export const modules = [
     path: '/clarity',
     label: 'Klarblick',
     icon: IconCompass,
-    color: 'grape',
+    // Muss zu CLARITY_COLOR in features/clarity/lib/appearance.js passen.
+    // Als Literal, weil die Modulliste nichts aus einem Feature importiert.
+    color: 'green',
   },
 ];

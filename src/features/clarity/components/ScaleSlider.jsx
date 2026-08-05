@@ -2,60 +2,66 @@ import { useEffect, useState } from 'react';
 import { Group, Slider, Text } from '@mantine/core';
 
 import { SCALE_MAX, SCALE_MIN, clampScale } from '../model.js';
+import { CLARITY_COLOR } from '../lib/appearance.js';
+import classes from './ScaleSlider.module.scss';
 
 /**
  * Der eine Regler des Moduls: 0 bis 100, ganzzahlig.
  *
- * Drei Festlegungen stecken hier drin, und alle drei gelten überall:
+ * Vier Festlegungen stecken hier drin, und alle vier gelten überall:
  *
- * 1. **Geschrieben wird beim Loslassen.** Während des Ziehens ändert sich nur
- *    die Anzeige. Ein Wert, den man zwanzigmal hin- und herschiebt, ist ein
- *    Schreibvorgang und nicht zwanzig.
+ * 1. **Die Anzeige folgt dem Finger, geschrieben wird beim Loslassen.**
+ *    Während des Ziehens ändert sich nur die Zahl daneben; in die Datenbank
+ *    geht der Wert einmal, wenn man loslässt. Ein Wert, den man zwanzigmal
+ *    hin- und herschiebt, ist ein Schreibvorgang und nicht zwanzig.
  * 2. **`null` heißt „nicht angegeben" und ist nicht 0.** Ein unberührter
  *    Regler steht deshalb gedämpft in der Mitte und behauptet keinen Wert.
- *    Das ist auch der Grund, warum es keinen Standardwert gibt: „0 % Angst"
- *    ist eine Aussage, die niemand getroffen hat.
- * 3. **Keine Farbe, die den Wert bewertet.** Ein hoher Wert bekommt kein Rot
- *    und keine Warnung. Er ist ein hoher Wert, keine schlechte Nachricht.
+ *    Sobald man ihn anfasst, steht dort eine Zahl – auch schon während des
+ *    Ziehens, sonst sähe man beim ersten Anfassen minutenlang „nicht
+ *    angegeben".
+ * 3. **Die Skala ist beziffert, nicht bewertet.** Unter den Enden stehen 0 und
+ *    100 und keine Wörter: „gar nicht" und „völlig" sind Deutungen, und in der
+ *    Sitzung wird ohnehin über Zahlen gesprochen.
+ * 4. **Keine Farbe, die den Wert bewertet.** Der Regler trägt die Farbe des
+ *    Moduls – bei 10 dieselbe wie bei 90. Ein hoher Wert ist ein hoher Wert,
+ *    keine schlechte Nachricht.
  */
-export default function ScaleSlider({
-  label,
-  description,
-  value,
-  onChange,
-  minLabel = '0',
-  maxLabel = '100',
-  disabled = false,
-}) {
-  const unset = value == null;
-  const [shown, setShown] = useState(value ?? 50);
+export default function ScaleSlider({ label, description, value, onChange, disabled = false }) {
+  // null = noch nichts angegeben. Wird beim ersten Ziehen zu einer Zahl,
+  // unabhängig davon, was schon gespeichert ist.
+  const [shown, setShown] = useState(value ?? null);
 
   // Nachziehen, wenn der Wert von außen kommt – etwa beim Blättern durch die
   // Schritte oder nach einem Abgleich.
   useEffect(() => {
-    setShown(value ?? 50);
+    setShown(value ?? null);
   }, [value]);
 
   return (
-    <div>
-      <Group justify="space-between" align="baseline" gap="xs" mb={2}>
+    <div className={classes.wrapper}>
+      <Group justify="space-between" align="baseline" gap="xs" mb={6}>
         <Text size="sm" fw={500}>
           {label}
         </Text>
-        <Text size="sm" c={unset ? 'dimmed' : undefined} fw={unset ? 400 : 600}>
-          {unset ? 'nicht angegeben' : shown}
+        <Text
+          size="sm"
+          fw={shown == null ? 400 : 700}
+          c={shown == null ? 'dimmed' : CLARITY_COLOR}
+          className={classes.value}
+        >
+          {shown ?? 'nicht angegeben'}
         </Text>
       </Group>
 
       {description && (
-        <Text size="xs" c="dimmed" mb={6}>
+        <Text size="xs" c="dimmed" mb={8}>
           {description}
         </Text>
       )}
 
       <Slider
-        value={shown}
-        onChange={setShown}
+        value={shown ?? 50}
+        onChange={(next) => setShown(next)}
         onChangeEnd={(next) => onChange(clampScale(next))}
         min={SCALE_MIN}
         max={SCALE_MAX}
@@ -63,16 +69,15 @@ export default function ScaleSlider({
         disabled={disabled}
         // Gedämpft, solange nichts angegeben ist: der Griff steht dann nur
         // irgendwo, er sagt nichts aus.
-        color={unset ? 'gray' : undefined}
+        color={shown == null ? 'gray' : CLARITY_COLOR}
         label={null}
         aria-label={label}
-        // Die Endpunkte beschriften statt Zwischenschritte zu markieren – die
+        // Die Endpunkte beziffern statt Zwischenschritte zu markieren – die
         // Skala braucht keine Einteilung, nur zwei Anker.
         marks={[
-          { value: SCALE_MIN, label: minLabel },
-          { value: SCALE_MAX, label: maxLabel },
+          { value: SCALE_MIN, label: String(SCALE_MIN) },
+          { value: SCALE_MAX, label: String(SCALE_MAX) },
         ]}
-        mb="lg"
       />
     </div>
   );

@@ -1,0 +1,11 @@
+// Die Beschriftungen der Endpunkte hängen absolut unter der Schiene und
+// zählen damit nicht zur Höhe des Reglers. Ohne reservierten Platz laufen sie
+// in das, was darunter kommt – am deutlichsten in die Fußleiste des Editors.
+.wrapper {
+  padding-bottom: px-to-rem(26px);
+}
+
+// Zahlen im gleichen Raster, damit der Wert beim Ziehen nicht springt.
+.value {
+  font-variant-numeric: tabular-nums;
+}

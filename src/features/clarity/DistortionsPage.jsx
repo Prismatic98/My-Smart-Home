@@ -31,8 +31,10 @@ export default function DistortionsPage() {
         Klarblick
       </Button>
 
-      <Title order={2}>Denkfehler</Title>
-      <Text size="sm" c="dimmed" mt={4} mb="lg">
+      <Title order={2} className={classes.title}>
+        Systematische Denkfehler
+      </Title>
+      <Text size="sm" c="dimmed" mt={6} mb="lg">
         Muster, in die das Denken unter Anspannung rutscht. Sie sind nicht
         falsch im Sinne von dumm — sie sind Abkürzungen, die in vielen Lagen
         nützlich sind und in manchen in die Irre führen. Zu jedem steht eine

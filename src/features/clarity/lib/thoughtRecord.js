@@ -95,7 +95,10 @@ export function stepHasContent(key, record) {
     case 'distortions':
       return (record.distortionIds ?? []).length > 0;
     case 'response':
-      return filled(record.response);
+      return (
+        filled(record.response) ||
+        Object.values(record.responseAnswers ?? {}).some((answer) => filled(answer))
+      );
     case 'outcome':
       return (
         filled(record.nextStep) ||
@@ -121,24 +124,41 @@ export function isEmptyThoughtRecord(record) {
 }
 
 /**
- * Was die Karte in der Übersicht zeigt – reine Anzeige, keine Auswertung.
+ * Was die Karte in der Übersicht zeigt.
  *
- * Überschrift ist die Situation; fehlt sie, tritt der erste Gedanke an ihre
- * Stelle. Ein Protokoll, in dem nur ein Satz steht, soll in der Liste
- * wiedererkennbar sein.
+ * Die Kachel ist kein Wiederfinden-Helfer mehr, sondern das Ergebnis in
+ * Kurzform: der Gedanke, das Gefühl, die Antwort, der Vorsatz. Genau das ist
+ * das, was man beim Durchblättern noch einmal lesen soll – ein Protokoll,
+ * dessen Ertrag erst nach zwei Klicks sichtbar wird, blättert man nicht durch.
+ *
+ * **Zusammengestellt, nicht ausgewertet.** Hier wird nichts verrechnet, nichts
+ * eingeordnet und nichts hervorgehoben, weil es „besser" geworden wäre. Die
+ * Werte stehen so nebeneinander, wie sie eingetragen wurden.
+ *
+ * `resolveDistortion` wird hereingereicht, damit diese Datei den Katalog nicht
+ * kennen muss und React-frei prüfbar bleibt.
  */
-export function summarizeThoughtRecord(record) {
+export function summarizeThoughtRecord(record, resolveDistortion) {
   const situation = (record.situation ?? '').trim();
   const thoughts = (record.automaticThoughts ?? []).filter((thought) => filled(thought.text));
   const emotions = (record.emotions ?? []).filter((emotion) => filled(emotion.label));
 
+  const answers = Object.values(record.responseAnswers ?? {}).filter((answer) => filled(answer));
+  const response = filled(record.response) ? record.response.trim() : (answers[0] ?? '');
+
   return {
-    headline: situation.length > 0 ? firstLine(situation) : thoughts[0] ? firstLine(thoughts[0].text) : '',
-    /** Der erste Gedanke – nur, wenn er nicht schon die Überschrift ist. */
-    leadThought: situation.length > 0 && thoughts[0] ? firstLine(thoughts[0].text) : '',
-    thoughtCount: thoughts.length,
+    headline:
+      situation.length > 0 ? firstLine(situation) : thoughts[0] ? firstLine(thoughts[0].text) : '',
+    /** Ohne Situation trägt der erste Gedanke die Überschrift – dann nicht doppelt. */
+    thoughts: situation.length > 0 ? thoughts : thoughts.slice(1),
     emotions,
-    distortionCount: (record.distortionIds ?? []).length,
+    distortions: (record.distortionIds ?? [])
+      .map((id) => resolveDistortion?.(id))
+      .filter(Boolean),
+    /** Die Antwort auf den Gedanken; ersatzweise die erste beantwortete Hilfsfrage. */
+    response,
+    responseBelief: record.responseBelief ?? null,
+    nextStep: filled(record.nextStep) ? record.nextStep.trim() : '',
     isDraft: record.status !== 'complete',
   };
 }

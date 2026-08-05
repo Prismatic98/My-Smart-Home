@@ -23,23 +23,40 @@
 // gedeckte Fläche statt Rahmen in Signalfarbe. Sie sind der Gegenstand der
 // Arbeit, keine Warnung.
 .recap {
-  background: var(--mantine-color-default-hover);
+  background: var(--mantine-color-green-light);
   border-color: transparent;
 }
 
 .recapLine {
   padding-left: px-to-rem(10px);
-  border-left: px-to-rem(2px) solid var(--mantine-color-default-border);
+  border-left: px-to-rem(2px) solid var(--mantine-color-green-filled);
   font-style: italic;
 }
 
-// Blättern muss mit dem Daumen erreichbar bleiben, auch wenn ein Schritt
-// länger ist als der Bildschirm.
+/**
+ * Die Fußleiste klebt am unteren Bildschirmrand.
+ *
+ * Drei Dinge, die vorher fehlten:
+ *
+ * 1. `bottom` zieht die Leiste um die Innenabstände der AppShell nach unten,
+ *    sonst bliebe sie diese Strecke über dem Rand stehen. Aus demselben Grund
+ *    darf der Container darunter KEIN `pb` haben: ein sticky-Element kommt nie
+ *    tiefer als der Inhaltsbereich seines Elternteils, ein Innenabstand unten
+ *    hielte es also genauso weit oben.
+ * 2. `z-index` legt sie über die Regler. Die Beschriftungen der Skalenenden
+ *    hängen absolut unter der Schiene und liefen sonst durch die Leiste
+ *    hindurch.
+ * 3. Die negativen Ränder plus derselbe Innenabstand lassen den Hintergrund
+ *    über die volle Breite laufen – ohne das schimmerte der Inhalt links und
+ *    rechts an der Leiste vorbei.
+ */
 .footer {
   position: sticky;
-  bottom: 0;
-  padding: var(--mantine-spacing-sm) 0;
+  bottom: calc(-1 * var(--app-shell-padding, 0px));
+  z-index: 2;
+  margin: 0 calc(-1 * var(--app-shell-padding, 0px));
+  padding: var(--mantine-spacing-sm) var(--app-shell-padding, 0px)
+    calc(var(--mantine-spacing-sm) + var(--app-shell-padding, 0px));
   background: var(--mantine-color-body);
-  // Der Inhalt darüber soll nicht hart abgeschnitten wirken.
-  box-shadow: 0 px-to-rem(-8px) px-to-rem(12px) var(--mantine-color-body);
+  border-top: px-to-rem(1px) solid var(--mantine-color-default-border);
 }

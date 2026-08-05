@@ -5,7 +5,7 @@
     box-shadow 150ms ease;
 
   &:hover {
-    border-color: var(--mantine-primary-color-filled);
+    border-color: var(--mantine-color-green-filled);
     box-shadow: var(--mantine-shadow-xs);
   }
 }
@@ -16,21 +16,10 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: px-to-rem(2px) solid var(--mantine-primary-color-filled);
+    outline: px-to-rem(2px) solid var(--mantine-color-green-filled);
     outline-offset: px-to-rem(4px);
     border-radius: var(--mantine-radius-sm);
   }
-}
-
-// Datum in Versalien und weit gesperrt: es soll als Kennzeichnung gelesen
-// werden, nicht als Satzanfang.
-.date {
-  letter-spacing: 0.04em;
-}
-
-// „Entwurf" ist eine Zustandsangabe, keine Mahnung – deshalb ohne Farbe.
-.draft {
-  font-weight: 500;
 }
 
 .headline {
@@ -42,4 +31,35 @@
   padding-left: px-to-rem(10px);
   border-left: px-to-rem(2px) solid var(--mantine-color-default-border);
   font-style: italic;
+}
+
+.emotion {
+  text-transform: none;
+  font-weight: 500;
+}
+
+// Der Zahlenwert gehört zum Gefühl, soll es aber nicht überschreien.
+.emotionValue {
+  margin-left: px-to-rem(6px);
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+// Die Antwort ist der Ertrag des Protokolls und bekommt als Einzige eine
+// Fläche – gedeckt in der Modulfarbe, nicht als Auszeichnung „richtig".
+.response {
+  padding: px-to-rem(8px) px-to-rem(10px);
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-green-light);
+  white-space: pre-wrap;
+}
+
+.nextStep {
+  color: var(--mantine-color-text);
+}
+
+.nextStepIcon {
+  flex: 0 0 auto;
+  margin-top: px-to-rem(3px);
+  color: var(--mantine-color-green-filled);
 }

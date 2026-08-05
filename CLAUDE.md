@@ -604,15 +604,29 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   wird durchsucht, nichts vorgeschlagen. Ein Muster im eigenen Denken zu
   erkennen ist die Übung – eine App, die sie abnimmt, hat sie erledigt statt
   geübt. Auf dem Blatt steht die Spalte als „freiwillig"; das steht auch hier.
-- **Die sechs Hilfsfragen** (`RESPONSE_QUESTIONS`) stehen dort, wo sie auf dem
-  Blatt stehen: klein unter der Antwortspalte, erreichbar wenn man sie braucht.
-  Eingeklappt, und ein Antippen setzt die Frage als Zwischenüberschrift ins
-  Textfeld. Ein Feld je Frage wäre eine Pflichtübung mit sechs Kästchen, von
-  denen man vier leer lässt.
-- `ScaleSlider` ist der einzige Regler des Moduls und hält drei Regeln fest:
-  geschrieben wird beim Loslassen, `null` heißt „nicht angegeben" (nicht 0, und
-  deshalb steht ein unberührter Regler gedämpft in der Mitte), und ein hoher
-  Wert bekommt keine Warnfarbe.
+- **Die sechs Hilfsfragen** (`RESPONSE_QUESTIONS`) bekommen im Schritt
+  „Antwort" **je ein eigenes Feld** und werden beantwortet, nicht nur
+  angeboten. Als eingeklappte Anregung über einem einzigen Textfeld wurden
+  zwei beantwortet und vier nie – sie sind aber die eigentliche Arbeit dieses
+  Schrittes. Darunter steht weiterhin das Feld der Blattspalte („Und
+  zusammengenommen?") samt Glaubenswert. Gespeichert wird unter der festen
+  `id` der Frage (`responseAnswers`), nicht unter ihrem Index: eine Antwort
+  soll ihrer Frage zugeordnet bleiben, auch wenn die Reihenfolge sich ändert.
+  Keine Pflichtangabe, keine Zählung der beantworteten Fragen.
+- **Textfelder setzen Aufzählungen fort** (`ListTextarea` +
+  `lib/bulletList.js`): „- " am Zeilenanfang, Enter, und der Strich steht auf
+  der nächsten Zeile; Enter auf einem leeren Punkt beendet die Liste. Der
+  Inhalt bleibt reiner Text – kein zweiter TipTap-Editor, der HTML in die
+  Datensätze und 430 KB ins Bundle brächte, damit Striche runder aussehen.
+  Die Cursor-Logik liegt React-frei in `lib/`, weil sie sich beim Ausprobieren
+  richtig anfühlt und bei eingerückten oder leeren Zeilen daneben liegt.
+- `ScaleSlider` ist der einzige Regler des Moduls und hält vier Regeln fest:
+  die Anzeige folgt dem Finger und geschrieben wird beim Loslassen; `null`
+  heißt „nicht angegeben" (nicht 0, und deshalb steht ein unberührter Regler
+  gedämpft in der Mitte, zeigt aber ab der ersten Berührung eine Zahl); die
+  Enden sind mit 0 und 100 beziffert und nicht mit „gar nicht"/„völlig" –
+  in der Sitzung wird über Zahlen gesprochen; und die Farbe hängt nie vom
+  Wert ab.
 - `BeforeAfter` zeigt im Schritt „Ergebnis" die beiden Werte nebeneinander –
   **ohne Differenz, ohne Pfeil, ohne Farbe.** Sobald daraus „−45" würde, hätte
   die App eine Richtung bewertet, in die es zu gehen hat, und eine Sitzung,
@@ -634,9 +648,46 @@ Automationen-Ansicht, Sensoren-Dashboard – bewusst später.
   Abgleich haben. Geteilt ist ausschließlich die Anzeige; die Zustände
   (`useNotesSync`, `useClaritySync`) bleiben getrennt, damit ein Fehler im
   einen Modul den anderen nicht mitbetrifft.
-- Routen: `/clarity` (Übersicht), `/clarity/thoughts/:recordId`,
-  `/clarity/denkfehler`, `/clarity/debug` (rohe Prüfseite auf der
-  Datenschicht, kein Teil der Oberfläche).
+- **Die Kachel in der Übersicht zeigt den Ertrag, nicht nur die Überschrift:**
+  Gedanke mit Glaubenswert vorher und jetzt, Gefühle mit Stärken, gewählte
+  Denkfehler, die Antwort, der Vorsatz. Ein Protokoll, dessen Ergebnis erst
+  nach zwei Klicks sichtbar wird, blättert man nicht durch. Leere Teile fallen
+  weg, statt als Lücke dazustehen. Deshalb auch nur zwei Spalten statt drei.
+- Routen: `/clarity` (nur die beiden Kacheln), `/clarity/thoughts` (Liste),
+  `/clarity/thoughts/:recordId` (Editor), `/clarity/denkfehler` (Katalog,
+  angezeigt als „Systematische Denkfehler"), `/clarity/debug` (rohe Prüfseite
+  auf der Datenschicht, nirgends verlinkt).
+
+### Klarblick: Darstellung
+- **Die Modulseite ist eine reine Auswahl.** Zwei Kacheln aus derselben
+  `ModuleCard` wie die Startseite der App – wer die App kennt, weiß hier
+  sofort, was zu tun ist. Kein Einleitungstext, kein Hinweiskasten, keine
+  Zahlen: ein Text, der bei jedem Öffnen dasteht, wird nach dem zweiten Mal
+  nicht mehr gelesen. Der Hinweis auf die fehlende Zugangskontrolle steht auf
+  der Protokoll-Liste, also dort, wo Inhalte entstehen.
+- **Die Modulfarbe ist Grün** (`CLARITY_COLOR` in `lib/appearance.js`, als
+  Literal auch in `lib/modules.js`). Klarblick soll sich von den übrigen
+  Modulen abheben und beim Öffnen weder nach Formular noch nach Krankenakte
+  aussehen. **Die Farbe hängt nie von einem Wert ab** – ein Regler auf 90 ist
+  genauso grün wie einer auf 10. Rot bleibt Fehlern und der Komplettlöschung
+  vorbehalten.
+- **Die Fußleiste des Editors klebt bündig am unteren Bildschirmrand.** Drei
+  Dinge gehören dafür zusammen (siehe `.footer` in ThoughtRecord.module.scss):
+  `bottom` zieht sie um die Innenabstände der AppShell nach unten, der
+  Container darunter darf **kein** `pb` haben (ein sticky-Element kommt nie
+  tiefer als der Inhaltsbereich seines Elternteils), und ein `z-index` legt sie
+  über die Regler – deren Skalenbeschriftungen hängen absolut unter der
+  Schiene und liefen sonst hindurch. `ScaleSlider` reserviert dafür zusätzlich
+  Platz unter sich.
+- Zwischen Beschriftung und Eingabefeld liegen 6 px, gesetzt in
+  `styles/global.scss`. Mantine setzt dort gar nichts, wodurch jedes Formular
+  eng wirkt. Der Selektor zählt die Eingabe-Komponenten einzeln auf: die
+  Beschriftung einer Checkbox oder eines Chips heißt genauso, steht aber
+  **neben** dem Bedienelement.
+- Die Gefühls-Vorschläge stehen in **einer** fortlaufenden Reihe, nicht nach
+  Gruppen getrennt. Gruppenweise umbrochen entstanden zwischen den Zeilen
+  unterschiedlich große Lücken, die aussahen, als fehlte dort etwas. Die
+  Gruppierung in `emotions.js` bestimmt nur noch die Reihenfolge.
 
 ## Feature-Aufbau
 - Jedes Feature liegt in einem eigenen Ordner unter `src/features/<name>/`

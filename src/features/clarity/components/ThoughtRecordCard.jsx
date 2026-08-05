@@ -1,31 +1,36 @@
-import { ActionIcon, Badge, Card, Group, Menu, Stack, Text } from '@mantine/core';
-import { IconDots, IconPencil, IconTrash } from '@tabler/icons-react';
+import { ActionIcon, Badge, Card, Divider, Group, Menu, Stack, Text } from '@mantine/core';
+import { IconArrowRight, IconDots, IconPencil, IconTrash } from '@tabler/icons-react';
 
 import { formatDateTime } from '../../../lib/formatDate.js';
+import { findDistortion } from '../content/distortions.js';
+import { CLARITY_COLOR } from '../lib/appearance.js';
 import { summarizeThoughtRecord } from '../lib/thoughtRecord.js';
 import classes from './ThoughtRecordCard.module.scss';
 
 /**
- * Ein Gedankenprotokoll in der Übersicht.
+ * Ein Gedankenprotokoll in der Übersicht – das Ergebnis in Kurzform.
  *
- * Gezeigt wird, woran man es wiedererkennt: wann es war, die Situation, der
- * erste Gedanke, die genannten Gefühle. Keine Werte, keine Verläufe, keine
- * Bewertung – die Karte ist ein Wiederfinden-Helfer, keine Zusammenfassung
- * dessen, wie es einem ging.
+ * Auf der Kachel steht, was man aus dem Protokoll mitnehmen soll: der Gedanke
+ * samt Glaubenswert vorher und jetzt, die Gefühle mit ihren Stärken, die
+ * gewählten Denkfehler, die Antwort und der Vorsatz. Wer durch die Liste
+ * blättert, liest damit die Erträge und nicht nur Überschriften.
  *
- * Oben steht der Zeitpunkt der Situation, nicht das Änderungsdatum: gesucht
- * wird nach „das Gespräch am Dienstag", nicht danach, wann zuletzt getippt
- * wurde.
+ * Leere Teile fallen weg statt als Lücke dazustehen: ein Entwurf mit drei
+ * Zeilen soll nicht wie ein unfertiges Formular aussehen.
+ *
+ * Zahlen stehen immer als Paar „vorher · jetzt" – **ohne Differenz, ohne
+ * Pfeil, ohne Farbe.** Sobald daraus eine Bewegung in eine „richtige"
+ * Richtung würde, wäre die Kachel eine Bewertung.
  */
 export default function ThoughtRecordCard({ record, onOpen, onDelete }) {
-  const summary = summarizeThoughtRecord(record);
+  const summary = summarizeThoughtRecord(record, findDistortion);
   const hasHeadline = summary.headline.length > 0;
 
   return (
     <Card withBorder radius="md" padding="md" className={classes.card}>
       <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
         <Stack
-          gap={8}
+          gap="sm"
           className={classes.body}
           role="button"
           tabIndex={0}
@@ -36,46 +41,106 @@ export default function ThoughtRecordCard({ record, onOpen, onDelete }) {
             onOpen(record);
           }}
         >
-          <Group gap={8} align="center" wrap="nowrap">
-            <Text size="xs" c="dimmed" className={classes.date}>
-              {formatDateTime(record.situationAt ?? record.createdAt)}
-            </Text>
-            {summary.isDraft && (
-              <Badge size="xs" variant="default" className={classes.draft}>
-                Entwurf
-              </Badge>
-            )}
-          </Group>
+          <div>
+            <Group gap={8} align="center" wrap="nowrap" mb={4}>
+              <Text size="xs" c="dimmed">
+                {formatDateTime(record.situationAt ?? record.createdAt)}
+              </Text>
+              {summary.isDraft && (
+                <Badge size="xs" variant="default">
+                  Entwurf
+                </Badge>
+              )}
+            </Group>
 
-          <Text
-            fw={600}
-            lineClamp={2}
-            c={hasHeadline ? undefined : 'dimmed'}
-            fs={hasHeadline ? undefined : 'italic'}
-            className={classes.headline}
-          >
-            {hasHeadline ? summary.headline : 'Noch ohne Inhalt'}
-          </Text>
-
-          {summary.leadThought.length > 0 && (
-            <Text size="sm" c="dimmed" lineClamp={2} className={classes.thought}>
-              {summary.leadThought}
+            <Text
+              fw={600}
+              lineClamp={2}
+              c={hasHeadline ? undefined : 'dimmed'}
+              fs={hasHeadline ? undefined : 'italic'}
+              className={classes.headline}
+            >
+              {hasHeadline ? summary.headline : 'Noch ohne Inhalt'}
             </Text>
+          </div>
+
+          {summary.thoughts.length > 0 && (
+            <Stack gap={4}>
+              {summary.thoughts.slice(0, 2).map((thought) => (
+                <div key={thought.id}>
+                  <Text size="sm" lineClamp={2} className={classes.thought}>
+                    {thought.text}
+                  </Text>
+                  <ValuePair
+                    label="geglaubt"
+                    before={thought.beliefBefore}
+                    after={thought.beliefAfter}
+                  />
+                </div>
+              ))}
+              {summary.thoughts.length > 2 && (
+                <Text size="xs" c="dimmed">
+                  +{summary.thoughts.length - 2} weitere Gedanken
+                </Text>
+              )}
+            </Stack>
           )}
 
           {summary.emotions.length > 0 && (
-            <Group gap={4} wrap="wrap" mt={2}>
-              {summary.emotions.slice(0, 4).map((emotion) => (
-                <Badge key={emotion.id} size="xs" variant="light" color="gray" radius="sm">
+            <Group gap={6} wrap="wrap">
+              {summary.emotions.map((emotion) => (
+                <Badge
+                  key={emotion.id}
+                  size="sm"
+                  variant="light"
+                  color={CLARITY_COLOR}
+                  radius="sm"
+                  className={classes.emotion}
+                >
                   {emotion.label}
-                  {emotion.intensityBefore != null ? ` · ${emotion.intensityBefore}` : ''}
+                  {emotion.intensityBefore != null && (
+                    <span className={classes.emotionValue}>
+                      {emotion.intensityBefore}
+                      {emotion.intensityAfter != null && ` · ${emotion.intensityAfter}`}
+                    </span>
+                  )}
                 </Badge>
               ))}
-              {summary.emotions.length > 4 && (
-                <Text size="xs" c="dimmed">
-                  +{summary.emotions.length - 4}
+            </Group>
+          )}
+
+          {summary.distortions.length > 0 && (
+            <Group gap={6} wrap="wrap">
+              {summary.distortions.map((distortion) => (
+                <Badge key={distortion.id} size="xs" variant="outline" color="gray" radius="sm">
+                  {distortion.label}
+                </Badge>
+              ))}
+            </Group>
+          )}
+
+          {summary.response.length > 0 && (
+            <>
+              <Divider variant="dashed" />
+              <div>
+                <Text size="sm" lineClamp={4} className={classes.response}>
+                  {summary.response}
                 </Text>
-              )}
+                {summary.responseBelief != null && (
+                  <Text size="xs" c="dimmed" mt={4}>
+                    daran geglaubt: {summary.responseBelief}
+                  </Text>
+                )}
+              </div>
+            </>
+          )}
+
+          {summary.nextStep.length > 0 && (
+            <Group gap={6} wrap="nowrap" align="flex-start" className={classes.nextStep}>
+              <IconArrowRight size={15} className={classes.nextStepIcon} />
+              <Text size="sm" lineClamp={2}>
+                {summary.nextStep}
+              </Text>
             </Group>
           )}
         </Stack>
@@ -102,5 +167,17 @@ export default function ThoughtRecordCard({ record, onOpen, onDelete }) {
         </Menu>
       </Group>
     </Card>
+  );
+}
+
+/** „geglaubt 85 · jetzt 40" – oder nichts, wenn nichts angegeben wurde. */
+function ValuePair({ label, before, after }) {
+  if (before == null && after == null) return null;
+
+  return (
+    <Text size="xs" c="dimmed" mt={2}>
+      {label} {before ?? '—'}
+      {after != null && ` · jetzt ${after}`}
+    </Text>
   );
 }

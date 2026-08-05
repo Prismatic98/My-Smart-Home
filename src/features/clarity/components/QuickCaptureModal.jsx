@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Button, Chip, Group, Modal, Stack, Text, Textarea } from '@mantine/core';
 
-import { EMOTION_GROUPS } from '../content/emotions.js';
+import { EMOTION_LABELS } from '../content/emotions.js';
 import { HELP_TEXTS } from '../content/prompts.js';
+import { CLARITY_COLOR } from '../lib/appearance.js';
 import { createRecord } from '../useClarity.js';
 import { newEmotion, newThought } from '../model.js';
 import ScaleSlider from './ScaleSlider.jsx';
@@ -101,23 +102,20 @@ export default function QuickCaptureModal({ opened, onClose, onCreated }) {
           </Text>
           {/* Nur eine Auswahl, und die ist optional. Mehrere Gefühle samt
               Stärke gehören in den Editor – hier zählt Tempo. */}
-          <Stack gap={6}>
-            {EMOTION_GROUPS.map((entry) => (
-              <Group key={entry.group} gap={6} wrap="wrap">
-                {entry.labels.map((label) => (
-                  <Chip
-                    key={label}
-                    size="xs"
-                    variant="light"
-                    checked={feeling === label}
-                    onChange={() => setFeeling(feeling === label ? '' : label)}
-                  >
-                    {label}
-                  </Chip>
-                ))}
-              </Group>
+          <Group gap={6} wrap="wrap">
+            {EMOTION_LABELS.map((label) => (
+              <Chip
+                key={label}
+                size="sm"
+                variant="light"
+                color={CLARITY_COLOR}
+                checked={feeling === label}
+                onChange={() => setFeeling(feeling === label ? '' : label)}
+              >
+                {label}
+              </Chip>
             ))}
-          </Stack>
+          </Group>
         </div>
 
         {feeling.length > 0 && (
@@ -125,8 +123,6 @@ export default function QuickCaptureModal({ opened, onClose, onCreated }) {
             label="Wie stark?"
             value={intensity}
             onChange={setIntensity}
-            minLabel="gar nicht"
-            maxLabel="so stark wie möglich"
           />
         )}
 
@@ -143,7 +139,7 @@ export default function QuickCaptureModal({ opened, onClose, onCreated }) {
           <Button variant="light" disabled={empty || saving} onClick={() => save(true)}>
             Sichern und weiter
           </Button>
-          <Button disabled={empty || saving} onClick={() => save(false)}>
+          <Button color={CLARITY_COLOR} disabled={empty || saving} onClick={() => save(false)}>
             Sichern
           </Button>
         </Group>
